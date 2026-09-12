@@ -19,21 +19,12 @@ const slot = (page, n) => page.locator('#subhist .scol').nth(n).locator('.slot')
 test.describe('Timeline navigation', () => {
     test.beforeEach(async ({ page }) => { await page.goto('/'); });
 
-    test('tabs run in chronological order and carry their year', async ({ page }) => {
-        const tabs = await page.locator('#seg button').evaluateAll((bs) =>
-            bs.map((b) => ({
-                label: b.firstChild.textContent.trim(),
-                year: b.querySelector('.z').textContent.trim(),
-                locked: b.classList.contains('lock'),
-            })),
+    // the full nine-tab timeline is asserted in modern.test.js; this covers locking only
+    test('only the two earned tools start locked', async ({ page }) => {
+        const locked = await page.locator('#seg button.lock').evaluateAll((bs) =>
+            bs.map((b) => b.firstChild.textContent.trim()),
         );
-        expect(tabs.map((t) => t.label)).toEqual([
-            'Encrypt', '① Caesar', '② Frequency', '③ Vigenère', '④ Bigrams', '⑤ Cribs',
-        ]);
-        expect(tabs.map((t) => t.year)).toEqual([
-            '加密', 'antiquity', 'c. 850', '1863', '1922', '1940',
-        ]);
-        expect(tabs.filter((t) => t.locked).map((t) => t.label)).toEqual(['④ Bigrams', '⑤ Cribs']);
+        expect(locked).toEqual(['④ Bigrams', '⑤ Cribs']);
     });
 
     test('a locked tab refuses to open', async ({ page }) => {

@@ -212,6 +212,7 @@
     font:600 12.5px/1 inherit;padding:9px 12px;border-radius:999px;cursor:pointer;transition:.15s;min-height:38px}
   .picker button.on{background:var(--gold);color:#20180a;border-color:var(--gold)}
   .picker button i{font-style:normal;opacity:.65;font-size:10.5px;font-family:var(--mono);margin-left:5px}
+  .picker>button{margin:0 6px 6px 0}   /* panels that list challenges without length bands */
   details.edu{background:var(--panel2);border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden}
   details.edu>summary{cursor:pointer;list-style:none;padding:13px 15px;font:600 14px/1.35 inherit;color:var(--ink);
     display:flex;align-items:center;gap:10px}
@@ -279,6 +280,29 @@
   .cand.risky{background:linear-gradient(180deg,#2c2317,#1e1810);border-color:rgba(224,164,88,.55);color:#e0a458}
   .cand.risky i{color:var(--danger);opacity:.9}
 
+  /* ---- one-time pad, RSA, Shor ---- */
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin-top:10px;
+    font:12.5px/1.6 var(--mono);word-break:break-all}
+  .kv dt{color:var(--gold-dim);font-weight:600;white-space:nowrap}
+  .kv dd{margin:0;color:var(--ink)}
+  .stream{font:14px/1.9 var(--mono);letter-spacing:2px;word-break:break-all;color:var(--blue)}
+  .cyc{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+  .cyc span{min-width:38px;padding:6px 4px;text-align:center;border-radius:7px;border:1px solid var(--line);
+    background:#0c0d14;font:700 12px/1.15 var(--mono);color:var(--ink)}
+  .cyc span u{display:block;text-decoration:none;font-size:9px;font-weight:400;color:var(--muted)}
+  .cyc span.rep{border-color:var(--teal);background:rgba(79,209,179,.14);color:var(--teal)}
+  .cyc span.one{border-color:var(--gold);background:rgba(217,180,106,.16);color:var(--gold)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .chips button{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--muted);
+    font:700 13px/1 var(--mono);padding:9px 12px;border-radius:8px;cursor:pointer;min-height:38px}
+  .chips button.on{background:var(--gold);color:#20180a;border-color:var(--gold)}
+  .scaletbl{width:100%;border-collapse:collapse;margin-top:10px;font:12px/1.5 var(--mono)}
+  .scaletbl th{text-align:left;color:var(--gold-dim);font-weight:600;padding:5px 8px 5px 0;
+    border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.08em;font-size:10px}
+  .scaletbl td{padding:5px 8px 5px 0;border-bottom:1px solid rgba(40,42,58,.5);color:var(--muted)}
+  .scaletbl td:first-child{color:var(--ink)}
+  .scaletbl tr.hard td{color:var(--danger)}
+
   footer{text-align:center;padding:30px 1rem 8px;font-size:12px;color:var(--muted)}
   .fbadges{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
   .fbadges img{height:28px}
@@ -302,6 +326,9 @@
       <button data-p="vig">③ Vigenère<span class="z">1863</span></button>
       <button data-p="brk" data-t="2" class="lock">④ Bigrams<span class="z">1922</span></button>
       <button data-p="brk" data-t="3" class="lock">⑤ Cribs<span class="z">1940</span></button>
+      <button data-p="otp">⑥ One-time pad<span class="z">1949</span></button>
+      <button data-p="rsa">⑦ RSA<span class="z">1977</span></button>
+      <button data-p="shor">⑧ Shor<span class="z">1994</span></button>
     </nav>
   </div>
   <p class="lede" style="margin:8px auto 0;font-size:12.5px">Each tab is a sharper tool than the one before it, in the order history found them. Ciphers do not get weaker — <b style="color:var(--ink)">the people attacking them get better</b>.</p>
@@ -559,6 +586,137 @@
     </div>
   </section>
 
+  <!-- ============ ⑥ ONE-TIME PAD ============ -->
+  <section class="panel" id="otp">
+    <div class="card">
+      <span class="era">⑥ Gilbert Vernam 1917 · proved unbreakable by Claude Shannon, 1949</span>
+      <h2>The cipher that wins</h2>
+      <p class="hint">Every tool so far worked because the key was <b>shorter than the message</b>, so it had to repeat, and repetition is structure. Take that away — a key as long as the message, truly random, used exactly once — and cryptanalysis stops. Not "gets hard". <b>Stops.</b> Shannon proved it in 1949. 一次性密碼本，用完即棄。</p>
+      <p class="hint" style="margin-top:-8px">Notice this is just <b>Vigenère with a key as long as the message</b>. Same machine, one changed assumption, and the whole page becomes useless against it.</p>
+
+      <div class="tool">
+        <div class="tlabel">Part 1 · why no tool here can touch it <span>— perfect secrecy, made concrete</span></div>
+        <div class="tbody">Below is a ciphertext enciphered with a one-time pad. Type <b>any message you like</b> of any length into the box and the lab will hand you the key that makes this exact ciphertext say precisely that. Every one of those keys is equally random and equally valid. The ciphertext does not contain the message — it is consistent with <i>all</i> messages, which is why counting, pairs and cribs have nothing to bite on.</div>
+        <label class="fld" style="margin-top:14px">Intercepted ciphertext · 密文</label>
+        <div class="out stream" id="otp_ct">—</div>
+        <label class="fld">Claim it says whatever you want</label>
+        <input type="text" id="otp_claim" spellcheck="false" value="RETREAT AT ONCE BY RIVER">
+        <label class="fld" style="margin-top:14px">…and here is the key that proves it</label>
+        <div class="out stream" id="otp_key">—</div>
+        <div class="meter" id="otp_msg"></div>
+      </div>
+
+      <div class="tool">
+        <div class="tlabel">Part 2 · reuse the pad once and it dies <span>— the Venona mistake</span></div>
+        <div class="tbody">The proof assumes the pad is never reused. Here are two different messages sent under the <b>same</b> pad. Subtract one ciphertext from the other and the key cancels exactly: <span class="k">C₁ − C₂ = P₁ − P₂</span>. No key, no cipher — just two plaintexts leaning on each other. Now guess a word in one and read the other. Codebreakers call this <b>crib dragging</b>.</div>
+        <label class="fld" style="margin-top:14px">Two ciphertexts, one pad</label>
+        <div class="out stream" id="otp_c1">—</div>
+        <div class="out stream" id="otp_c2" style="margin-top:8px">—</div>
+        <label class="fld" style="margin-top:14px">C₁ − C₂ · the pad is gone</label>
+        <div class="out stream" id="otp_diff">—</div>
+
+        <div class="row">
+          <input type="text" id="otp_crib" spellcheck="false" value="THE" style="flex:1;min-width:150px">
+          <button class="act gold" id="otp_drag">✦ Drag it along</button>
+        </div>
+        <div class="meter" id="otp_res">Type a word you think appears in either message, then drag it across every position.</div>
+        <div class="shifts" id="otp_hits"></div>
+      </div>
+
+      <details class="edu"><summary>What Shannon actually proved</summary>
+        <div class="b"><p>In 1949 Claude Shannon defined <b>perfect secrecy</b>: a ciphertext gives an attacker <i>no information whatsoever</i> about the plaintext beyond its length. Formally, the probability of any message given the ciphertext equals its probability beforehand. He proved the one-time pad achieves it — and, more brutally, that <b>any</b> cipher achieving it needs a key at least as long as the message. There is no clever scheme waiting to be found that gives perfect secrecy on a short key. That door is closed by arithmetic.</p>
+        <p>This is the only cipher on this page that is not merely unbroken but <i>unbreakable</i>, and it is the reason the arms race had to move somewhere else entirely.</p></div>
+      </details>
+      <details class="edu"><summary>So why does nobody use it?</summary>
+        <div class="b"><p>Three requirements, and all three are operational rather than mathematical:</p>
+        <ol>
+          <li><b>As long as everything you will ever send.</b> To exchange a gigabyte secretly you must first exchange a gigabyte secretly — which is the problem you were trying to solve.</li>
+          <li><b>Truly random.</b> Not a pseudorandom generator; anything with an internal state has structure, and structure is what the previous five tabs eat.</li>
+          <li><b>Used exactly once.</b> Part 2 is what "once" means. Soviet cable traffic in the 1940s reused duplicated pad pages, and the Venona project read the results for decades.</li>
+        </ol>
+        <p>Pads are still used where those costs are acceptable — a diplomat carrying a sealed book, a hotline between two capitals. For everyone else the question became: can two strangers agree a key over a wire an enemy is listening to? That question stayed open until <b>1976</b>. <b>Tab ⑦.</b></p></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ ⑦ RSA ============ -->
+  <section class="panel" id="rsa">
+    <div class="card">
+      <span class="era">⑦ Diffie &amp; Hellman 1976 · Rivest, Shamir &amp; Adleman 1977</span>
+      <h2>Break RSA by factoring</h2>
+      <p class="hint">Every cipher so far assumed you had already shared a key somehow. That assumption is the unexamined hole in the whole page. Public-key cryptography closes it: publish a key that <b>locks</b>, keep the one that <b>unlocks</b>. RSA's security is one bet — that factoring a large number back into its two primes is hard. So break it the only way there is. 分解質因數就贏。</p>
+
+      <label class="fld">Choose a key size · 揀一條</label>
+      <div class="picker" id="rsa_picker"></div>
+
+      <dl class="kv" id="rsa_params"></dl>
+
+      <div class="row">
+        <button class="act gold" id="rsa_factor">✦ Factor N by trial division</button>
+      </div>
+      <div class="meter" id="rsa_meter">Every divisor up to √N, one at a time. Exactly what an attacker with no cleverness would do.</div>
+
+      <label class="fld" style="margin-top:16px">Recovered private key · 私鑰</label>
+      <div class="out" id="rsa_key">—</div>
+      <label class="fld">Decrypted message · 明文</label>
+      <div class="out" id="rsa_out">—</div>
+
+      <div class="tlabel" style="margin-top:18px">What this costs at real key sizes</div>
+      <table class="scaletbl" id="rsa_scale"><tbody></tbody></table>
+      <div class="meter" id="rsa_note"></div>
+
+      <details class="edu"><summary>How RSA works, in five lines</summary>
+        <div class="b"><p>Pick two primes <span class="k">p</span> and <span class="k">q</span>. Publish <span class="k">N = p × q</span> and a public exponent <span class="k">e</span>. Encrypt with <span class="k">c = mᵉ mod N</span>. Anyone can do that. Decryption needs <span class="k">d</span>, the inverse of <span class="k">e</span> modulo <span class="k">(p−1)(q−1)</span> — and computing it requires knowing <b>p and q</b>, not just their product.</p>
+        <p>So the public key hands the world everything except the one thing that matters. Multiplying two 300-digit primes takes microseconds; splitting the result back apart is, as far as anyone knows, infeasible. <b>"As far as anyone knows"</b> is doing enormous work in that sentence, and it is the whole of the security.</p></div>
+      </details>
+      <details class="edu"><summary>Kerckhoffs, taken to the limit</summary>
+        <div class="b"><p>Tab ① made the point that the algorithm must be public and only the key secret. RSA goes further: <b>half the key is published too.</b> N and e are printed on every certificate your browser accepts. The design is so confident in the difficulty of factoring that it hands the attacker the number to factor.</p>
+        <p>That confidence has been repaid for fifty years by classical computers. It was never a proof, and in 1994 someone found a different kind of computer for which the bet does not hold. <b>Tab ⑧.</b></p></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ ⑧ SHOR ============ -->
+  <section class="panel" id="shor">
+    <div class="card">
+      <span class="era">⑧ Peter Shor, 1994 · the only attack here that has not arrived yet</span>
+      <h2>Factoring by finding a period</h2>
+      <p class="hint">Shor's insight was not a faster way to divide. It was that <b>factoring is secretly a question about repetition</b> — and repetition is the one thing a quantum computer is extraordinarily good at detecting. Everything below is the <i>classical</i> half of his algorithm, which runs perfectly well in your browser. Only one step needs the hardware nobody has yet. 週期就係答案。</p>
+
+      <label class="fld">Pick a number to factor · 揀一個</label>
+      <div class="picker" id="sh_picker"></div>
+
+      <div class="tool">
+        <div class="tlabel">Step 1 · pick a base and watch it cycle</div>
+        <div class="tbody">Take any <span class="k">a</span> sharing no factor with <span class="k">N</span> and compute <span class="k">a¹, a², a³ … mod N</span>. The sequence <b>always returns to 1</b>, and it does so after a fixed number of steps called the <b>period</b>, written <span class="k">r</span>. Nothing here is quantum — you can see the repeat with your eyes.</div>
+        <div class="chips" id="sh_bases"></div>
+        <div class="cyc" id="sh_cycle"></div>
+        <div class="meter" id="sh_period">—</div>
+      </div>
+
+      <div class="tool">
+        <div class="tlabel">Step 2 · turn the period into the factors</div>
+        <div class="tbody">If <span class="k">r</span> is even and <span class="k">a^(r/2) ≢ −1 mod N</span>, then <span class="k">a^(r/2) − 1</span> and <span class="k">a^(r/2) + 1</span> each share a real factor with N, and a plain greatest-common-divisor pulls them out. If those conditions fail, the base was unlucky — pick another. That is Shor's algorithm in full, minus one step.</div>
+        <div class="row"><button class="act gold" id="sh_factor">✦ Factor using this period</button></div>
+        <div class="meter" id="sh_result"></div>
+      </div>
+
+      <details class="edu"><summary>Which step needs a quantum computer, and why</summary>
+        <div class="b"><p>Step 2 is trivial arithmetic. <b>Step 1 is the whole problem.</b> Above, you found the period by computing every power in turn — for a 20-digit N that is fine, and for the 617-digit N protecting your bank it is hopeless, because the number of powers you must try grows with N itself. Classically, period-finding is no easier than factoring.</p>
+        <p>A quantum computer does not try the powers one at a time. It prepares a superposition over all exponents at once, then applies a <b>quantum Fourier transform</b>, which is an operation that turns a repeating pattern into a sharp spike at its frequency. Measuring gives the period in polynomial time. That is the entire quantum contribution: <i>one</i> step, doing one thing — detecting repetition — that classical machines cannot do at scale.</p></div>
+      </details>
+      <details class="edu"><summary>What this does and does not break — and when</summary>
+        <div class="b"><p><b>Breaks outright:</b> RSA, Diffie–Hellman and elliptic curve cryptography. All three rest on factoring or discrete logarithms, and Shor dissolves both. That is essentially every public-key algorithm securing the internet today.</p>
+        <p><b>Does not break:</b> symmetric ciphers and hashes. The best known quantum attack there is Grover's, which gives only a square-root speedup — AES-256 retains around 128 bits of security, which is still far out of reach. The one-time pad in tab ⑥ remains perfectly secret regardless, since Shannon's proof is information-theoretic and does not care what machine you own.</p>
+        <p><b>When:</b> no machine capable of running Shor at these sizes exists, and published expert forecasts range from about a decade to never. Treat any single figure — including ten years — as an opinion rather than a measurement. What is <i>not</i> an opinion is that the replacements are already standards: NIST published <b>ML-KEM</b> (FIPS 203), <b>ML-DSA</b> (FIPS 204) and <b>SLH-DSA</b> (FIPS 205) with effect from 14 August 2024, adding code-based <b>HQC</b> as a backup in March 2025, and guidance deprecates today's public-key algorithms by <b>2030</b> and disallows them by <b>2035</b>.</p></div>
+      </details>
+      <details class="edu"><summary>Why the deadline is already behind you</summary>
+        <div class="b"><p>This is where tab ⑧ meets the lesson from tab ②. An attacker does not need the machine on the day they intercept your traffic — only on the day they decide to read it. Recording encrypted traffic now and decrypting it whenever the hardware arrives is called <b>harvest now, decrypt later</b>, and storage is cheap while patience is free.</p>
+        <p>So the migration deadlines are effectively retroactive. Anything you send today that must stay secret into the 2040s is <i>already</i> exposed, because the interception happens now and the decryption happens on somebody else's schedule. Every tab on this page has been a demonstration of the same asymmetry: you must defend against every future technique, while an attacker need only wait for one.</p></div>
+      </details>
+    </div>
+  </section>
+
   <footer>
     <div class="fbadges">
       <a href="https://www.netlify.com" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Deploys%20by-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white" alt="Deploys by Netlify"></a>
@@ -707,6 +865,271 @@ function makeBigrams(texts){
   document.getElementById('e_plus').onclick=()=>{shift=(shift+1)%26;shiftEl.textContent=shift;render();};
   document.getElementById('e_minus').onclick=()=>{shift=(shift+25)%26;shiftEl.textContent=shift;render();};
   inp.oninput=render; keyEl.oninput=render; render();
+})();
+
+/* ================= ⑥ ONE-TIME PAD ================= */
+(function(){
+  const BG=makeBigrams([CORPUS]);
+  const A=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
+  const N=c=>c.charCodeAt(0)-65, L=n=>String.fromCharCode(65+((n%26)+26)%26);
+
+  // Part 1 — one ciphertext, and a key for every message you care to claim
+  const TRUE_PLAIN="ATTACK THE HARBOUR AT DAWN";
+  let PAD='';
+  {
+    const p=A(TRUE_PLAIN);
+    // a fixed pad, so the page reads the same on every visit; randomness is the
+    // requirement being TAUGHT here, not a property this demo needs
+    PAD="XQJZLPMWRTKGVBYNEUCHSAFIDO".slice(0,p.length);
+    document.getElementById('otp_ct').textContent=
+      p.split('').map((ch,i)=>L(N(ch)+N(PAD[i]))).join('');
+  }
+  const claim=document.getElementById('otp_claim'), keyOut=document.getElementById('otp_key'),
+    msg=document.getElementById('otp_msg'), ct=document.getElementById('otp_ct').textContent;
+  function showKey(){
+    const want=A(claim.value);
+    if(!want){keyOut.textContent='—';msg.textContent='Type anything at all.';return;}
+    const n=Math.min(want.length,ct.length);
+    keyOut.textContent=want.slice(0,n).split('').map((ch,i)=>L(N(ct[i])-N(ch))).join('');
+    msg.innerHTML=want.length>ct.length
+      ? '<b class="warn">Longer than the ciphertext</b> — a pad only hides what it covers. Length is the one thing a one-time pad leaks.'
+      : 'That key is exactly as random as the real one, and there is no test that tells them apart. '+
+        (want.length<ct.length?'<b>'+(ct.length-want.length)+'</b> letters of ciphertext left over.':
+         '<b class="good">Perfect secrecy</b> — every message of this length has a key.');
+  }
+  claim.oninput=showKey;showKey();
+
+  /* Part 2 — the same pad twice. The key cancels and the plaintexts attack each other. */
+  const P1="MEET THE COURIER AT THE HARBOUR BEFORE MIDNIGHT",
+        P2="THE SHIPMENT WILL ARRIVE UNDER A FALSE MANIFEST";
+  const a1=A(P1), a2=A(P2), len=Math.min(a1.length,a2.length);
+  const PAD2="QIFNXKZBWJDSLVGYCHRUAMPTOEQIFNXKZBWJDSLVGYCHRU".slice(0,len);
+  const c1=a1.slice(0,len).split('').map((ch,i)=>L(N(ch)+N(PAD2[i]))).join('');
+  const c2=a2.slice(0,len).split('').map((ch,i)=>L(N(ch)+N(PAD2[i]))).join('');
+  const diff=c1.split('').map((ch,i)=>L(N(ch)-N(c2[i]))).join('');
+  document.getElementById('otp_c1').textContent=c1;
+  document.getElementById('otp_c2').textContent=c2;
+  document.getElementById('otp_diff').textContent=diff;
+
+  const cribIn=document.getElementById('otp_crib'), res=document.getElementById('otp_res'),
+    hits=document.getElementById('otp_hits');
+  document.getElementById('otp_drag').onclick=()=>{
+    const w=A(cribIn.value);
+    hits.innerHTML='';
+    if(w.length<2){res.innerHTML='<b class="warn">Give it at least two letters.</b>';return;}
+    if(w.length>len){res.innerHTML='<b class="warn">Longer than the messages.</b>';return;}
+    const rows=[];
+    for(let i=0;i+w.length<=len;i++){
+      // diff = P1 − P2, so assuming the crib is P1 here gives P2 = crib − diff
+      const other=w.split('').map((ch,k)=>L(N(ch)-N(diff[i+k]))).join('');
+      rows.push({i,other,f:BG.fit(other)});
+    }
+    const best=rows.reduce((x,y)=>y.f>x.f?y:x);
+    rows.sort((x,y)=>y.f-x.f);
+    rows.slice(0,12).forEach(o=>{
+      const r=document.createElement('button');
+      r.className='srow'+(o.i===best.i?' best':'');
+      r.dataset.s=o.i;
+      r.innerHTML='<span class="k">'+String(o.i).padStart(2,'0')+'</span><span class="t"></span><span class="f">'+o.f+'</span>';
+      r.querySelector('.t').textContent=o.other.toLowerCase();
+      r.onclick=()=>{
+        [...hits.children].forEach(x=>x.classList.remove('on'));r.classList.add('on');
+        res.innerHTML='At position <b>'+o.i+'</b>: if message 1 reads <b>'+w.toLowerCase()+
+          '</b> there, then message 2 reads <b class="good">'+o.other.toLowerCase()+'</b> — and the reverse is equally true, because the two messages are symmetric. '+
+          (o.i===best.i?'This is the best-scoring position.':'');
+      };
+      hits.appendChild(r);
+    });
+    res.innerHTML='Dragged “'+w.toLowerCase()+'” across <b>'+rows.length+'</b> positions. Best letter-pair fit is at position <b class="good">'+
+      best.i+'</b>, giving “<b>'+best.other.toLowerCase()+'</b>” in the other message. Tap a row to read it.';
+  };
+})();
+
+/* ================= ⑦ RSA ================= */
+(function(){
+  const P=document.getElementById('rsa_picker'), PAR=document.getElementById('rsa_params'),
+    MET=document.getElementById('rsa_meter'), KEY=document.getElementById('rsa_key'),
+    OUT=document.getElementById('rsa_out'), SCALE=document.querySelector('#rsa_scale tbody'),
+    NOTE=document.getElementById('rsa_note');
+
+  const KEYS=[
+    {label:'4-digit N', p:61n, q:53n, e:17n, plain:"MEET AT DAWN"},
+    {label:'7-digit N', p:1571n, q:1999n, e:17n, plain:"BURN THIS NOTE"},
+    {label:'12-digit N', p:104729n, q:1299709n, e:65537n, plain:"THE KEY IS SAFE"},
+    {label:'16-digit N', p:32452843n, q:49979687n, e:65537n, plain:"FACTORING IS HARD"}
+  ];
+  let active=0, found=null;
+
+  const modpow=(b,x,m)=>{let r=1n;b%=m;while(x>0n){if(x&1n)r=r*b%m;b=b*b%m;x>>=1n;}return r;};
+  function modinv(a,m){
+    let [o,r,s,t]=[m,a,0n,1n];
+    while(r>0n){const q=o/r;[o,r]=[r,o-q*r];[s,t]=[t,s-q*t];}
+    return ((s%m)+m)%m;
+  }
+  // two letters per block: A=1..Z=26, space=0, so every block is under 2627
+  const enc=s=>{const t=s.toUpperCase().replace(/[^A-Z ]/g,''),out=[];
+    for(let i=0;i<t.length;i+=2){
+      const v=c=>c===undefined?0:(c===' '?0:c.charCodeAt(0)-64);
+      out.push(BigInt(v(t[i])*100+v(t[i+1])));
+    }return out;};
+  const dec=blocks=>blocks.map(b=>{
+    const n=Number(b),a=Math.floor(n/100),z=n%100;
+    const ch=k=>k===0?' ':String.fromCharCode(64+k);
+    return ch(a)+ch(z);
+  }).join('').replace(/\s+$/,'');
+
+  function current(){
+    const k=KEYS[active];
+    const N=k.p*k.q, phi=(k.p-1n)*(k.q-1n), d=modinv(k.e,phi);
+    const ct=enc(k.plain).map(m=>modpow(m,k.e,N));
+    return {...k,N,phi,d,ct};
+  }
+  function show(){
+    const k=current();
+    PAR.innerHTML=
+      '<dt>Public N</dt><dd>'+k.N+' <span style="color:var(--muted)">('+String(k.N).length+' digits)</span></dd>'+
+      '<dt>Public e</dt><dd>'+k.e+'</dd>'+
+      '<dt>Ciphertext</dt><dd>'+k.ct.join(' ')+'</dd>'+
+      '<dt>Private d</dt><dd style="color:var(--muted)">unknown — it needs p and q</dd>';
+    KEY.textContent='—';OUT.textContent='—';found=null;
+    SCALE.innerHTML='<tr><td style="color:var(--muted)">Factor one of the keys above and this table fills in, '+
+      'extrapolated from how fast <i>your</i> machine actually managed it.</td></tr>';
+    NOTE.textContent='';
+    MET.innerHTML='Every divisor up to √N ≈ <b>'+Math.floor(Math.sqrt(Number(k.N))).toLocaleString()+
+      '</b>, one at a time. Exactly what an attacker with no cleverness would do.';
+  }
+  KEYS.forEach((k,i)=>{
+    const b=document.createElement('button');b.textContent=k.label;b.dataset.i=i;
+    b.onclick=()=>{active=i;P.querySelectorAll('button').forEach(x=>x.classList.toggle('on',+x.dataset.i===i));show();};
+    P.appendChild(b);
+  });
+  P.querySelector('button').classList.add('on');
+
+  document.getElementById('rsa_factor').onclick=()=>{
+    const k=current(), n=Number(k.N);
+    const t0=performance.now();
+    let p=0,trials=0;
+    for(let i=2;i*i<=n;i++){trials++;if(n%i===0){p=i;break;}}
+    const ms=performance.now()-t0;
+    if(!p){MET.innerHTML='<b class="bad">No factor found.</b>';return;}
+    const q=n/p, phi=BigInt(p-1)*BigInt(q-1), d=modinv(k.e,phi);
+    found={p,q,trials,ms};
+    MET.innerHTML='Factored in <b class="good">'+trials.toLocaleString()+'</b> trial divisions ('+
+      (ms<1?'under 1':Math.round(ms))+' ms): <b>N = '+p+' × '+q+'</b>';
+    KEY.innerHTML='p = '+p+' · q = '+q+' · φ(N) = '+phi+' · <b style="color:var(--teal)">d = '+d+'</b>';
+    OUT.textContent=dec(k.ct.map(c=>modpow(c,d,k.N)));
+    buildScale(ms,trials);
+  };
+  /* 2^1024 overflows a double, so the whole extrapolation is done in log space. */
+  function buildScale(ms,trials){
+    const rate=trials/Math.max(ms,0.001)*1000;           // trial divisions per second, measured here
+    const rows=[[64,''],[128,''],[256,''],[512,'RSA-155, factored in 1999'],
+                [1024,'retired'],[2048,'your bank, today']];
+    SCALE.innerHTML='<tr><th>Key size</th><th>Trial divisions</th><th>Time at this machine’s rate</th><th></th></tr>';
+    rows.forEach(([bits,note])=>{
+      const logSteps=(bits/2)*Math.LOG10E*Math.LN2;      // log10(2^(bits/2)) = √N
+      const logSecs=logSteps-Math.log10(rate);
+      const tr=document.createElement('tr');
+      if(bits>=256)tr.className='hard';
+      tr.innerHTML='<td>'+bits+'-bit</td><td>2<sup>'+(bits/2)+'</sup></td><td>'+
+        human(logSecs)+'</td><td>'+note+'</td>';
+      SCALE.appendChild(tr);
+    });
+    NOTE.innerHTML='Measured on <i>this</i> machine at <b>'+Math.round(rate).toLocaleString()+
+      '</b> trial divisions per second, then extrapolated — not a figure quoted from anywhere. '+
+      'Trial division is the dumbest possible attack and real factoring uses the general number field '+
+      'sieve, which is enormously faster; it still leaves 2048-bit RSA far out of reach. '+
+      'The universe is about 10<sup>10</sup> years old, for scale.';
+  }
+  function human(logSecs){                               // takes log10(seconds)
+    if(logSecs<1.78)return Math.round(Math.pow(10,logSecs))+' s';
+    if(logSecs<3.56)return Math.round(Math.pow(10,logSecs)/60)+' min';
+    if(logSecs<4.94)return Math.round(Math.pow(10,logSecs)/3600)+' hours';
+    const logYears=logSecs-7.4983;                       // seconds per year ≈ 10^7.4983
+    if(logYears<0)return Math.round(Math.pow(10,logSecs)/86400)+' days';
+    if(logYears<6)return Math.round(Math.pow(10,logYears)).toLocaleString()+' years';
+    return '10<sup>'+Math.round(logYears)+'</sup> years';
+  }
+  show();
+})();
+
+/* ================= ⑧ SHOR ================= */
+(function(){
+  const P=document.getElementById('sh_picker'), BASES=document.getElementById('sh_bases'),
+    CYC=document.getElementById('sh_cycle'), PER=document.getElementById('sh_period'),
+    RES=document.getElementById('sh_result');
+
+  const NS=[15,21,35,77,91];
+  let N=15, a=0, period=0;
+
+  const gcd=(x,y)=>{while(y){[x,y]=[y,x%y];}return x;};
+  const powmod=(b,x,m)=>{let r=1;b%=m;while(x>0){if(x&1)r=r*b%m;b=b*b%m;x>>=1;}return r;};
+
+  function coprimes(n){
+    const out=[];for(let i=2;i<n;i++)if(gcd(i,n)===1)out.push(i);
+    return out.slice(0,10);
+  }
+  function buildBases(){
+    BASES.innerHTML='';
+    coprimes(N).forEach(v=>{
+      const b=document.createElement('button');b.textContent='a = '+v;b.dataset.a=v;
+      b.onclick=()=>setBase(v);BASES.appendChild(b);
+    });
+  }
+  function setBase(v){
+    a=v;
+    BASES.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.a===v));
+    CYC.innerHTML='';
+    let x=1,r=0;
+    const seq=[];
+    for(let k=1;k<=Math.min(40,N+2);k++){
+      x=x*a%N;seq.push(x);
+      if(x===1){r=k;break;}
+    }
+    period=r;
+    seq.forEach((val,i)=>{
+      const s=document.createElement('span');
+      if(val===1&&i+1===r)s.className='one';
+      else if(r&&i<r)s.className='rep';
+      s.innerHTML=val+'<u>a^'+(i+1)+'</u>';
+      CYC.appendChild(s);
+    });
+    PER.innerHTML=r
+      ? 'The sequence returns to <b>1</b> after <b class="good">'+r+'</b> steps, so the period is <b>r = '+r+'</b>.'
+      : '<b class="warn">No repeat within the window shown.</b> Pick another base.';
+    RES.textContent='';
+  }
+  function setN(v){
+    N=v;P.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.n===v));
+    buildBases();
+    const first=BASES.querySelector('button');
+    if(first)setBase(+first.dataset.a);
+  }
+  NS.forEach(v=>{
+    const b=document.createElement('button');b.dataset.n=v;b.textContent='N = '+v;
+    b.onclick=()=>setN(v);P.appendChild(b);
+  });
+
+  document.getElementById('sh_factor').onclick=()=>{
+    if(!period){RES.innerHTML='<b class="warn">Find a period first.</b>';return;}
+    if(period%2){
+      RES.innerHTML='<b class="warn">r = '+period+' is odd</b>, so a^(r/2) is not a whole number and this base is useless. '+
+        'Pick another — Shor\'s algorithm expects to retry, and does so a few times on average.';
+      return;
+    }
+    const h=powmod(a,period/2,N);
+    if(h===N-1){
+      RES.innerHTML='<b class="warn">a^(r/2) ≡ −1 mod N</b>, which makes both gcds trivial. Unlucky base — pick another.';
+      return;
+    }
+    const f1=gcd(h-1,N), f2=gcd(h+1,N);
+    const ok=(f1>1&&f1<N)||(f2>1&&f2<N);
+    RES.innerHTML=ok
+      ? 'a^(r/2) = <b>'+h+'</b> · gcd('+(h-1)+', '+N+') = <b class="good">'+f1+'</b> · gcd('+(h+1)+', '+N+') = <b class="good">'+f2+
+        '</b><br><b class="good">'+N+' = '+f1+' × '+f2+'</b> — factored, using nothing but a period and a greatest common divisor.'
+      : '<b class="warn">Both gcds came out trivial.</b> Pick another base.';
+  };
+  setN(15);
 })();
 
 /* ================= BREAK SHIFT — Caesar & Vigenère ================= */
