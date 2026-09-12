@@ -62,8 +62,10 @@ test.describe('① Caesar — exhaustive key search', () => {
         await page.click('#seg button[data-p="cae"]');
     });
 
-    test('shows all 25 candidate decryptions', async ({ page }) => {
+    test('shows all 25 candidate decryptions, unscored until asked', async ({ page }) => {
         await expect(page.locator('#c_grid .srow')).toHaveCount(25);
+        await expect(page.locator('#c_grid .srow.best')).toHaveCount(0);
+        await page.click('#c_score');
         await expect(page.locator('#c_grid .srow.best')).toHaveCount(1);
     });
 
@@ -72,12 +74,14 @@ test.describe('① Caesar — exhaustive key search', () => {
         expect(n).toBe(3);
         for (let i = 0; i < n; i++) {
             await page.locator('#c_picker button').nth(i).click();
+            await page.click('#c_score');
             await page.locator('#c_grid .srow.best').click();
             await expect(page.locator('#c_meter2')).toContainText('this is the key');
         }
     });
 
     test('picking a wrong shift is called out rather than accepted', async ({ page }) => {
+        await page.click('#c_score');
         const best = await page.locator('#c_grid .srow.best').getAttribute('data-s');
         await page.locator(`#c_grid .srow:not([data-s="${best}"])`).first().click();
         await expect(page.locator('#c_meter2')).toContainText('not English');
@@ -95,6 +99,7 @@ test.describe('③ Vigenère — key length then columns', () => {
         await expect(page.locator('#s_ic .icc')).toHaveCount(12);
         for (let i = 0; i < expected.length; i++) {
             await page.locator('#v_picker button').nth(i).click();
+            await page.click('#s_icscore');
             expect(+(await page.locator('#s_ic .icc.peak .n').textContent())).toBe(expected[i]);
         }
     });
@@ -103,6 +108,7 @@ test.describe('③ Vigenère — key length then columns', () => {
         const keys = ['KEY', 'RONIN', 'BABBAGE'];
         for (let i = 0; i < keys.length; i++) {
             await page.locator('#v_picker button').nth(i).click();
+            await page.click('#s_icscore');
             await page.locator('#s_ic .icc.peak').click();
             await expect(page.locator('#s_cols .vcol')).toHaveCount(keys[i].length);
             await page.click('#s_auto');
@@ -112,6 +118,7 @@ test.describe('③ Vigenère — key length then columns', () => {
     });
 
     test('a column can be nudged by hand and the key letter follows', async ({ page }) => {
+        await page.click('#s_icscore');
         await page.locator('#s_ic .icc.peak').click();
         const col = page.locator('#s_cols .vcol').first();
         await expect(col.locator('.kl')).toHaveText('A');

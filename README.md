@@ -37,14 +37,26 @@ It's built for the classroom: the tools are front and centre, the theory hides b
 
 ## Features
 
-### Encrypt
-- **Caesar cipher** with a live rotating cipher wheel and adjustable shift
-- **Vigenère cipher** with a keyword — polyalphabetic, the cipher that resisted frequency analysis for 300 years
-- Expandable notes: how the Caesar cipher works, Kerckhoffs's Principle, why Vigenère held
+### Encrypt — every cipher the lab breaks, you can also build
+
+Five ciphers, each of which round-trips, so you can make a ciphertext and then go and break it:
+
+| Mode | Key | Notes |
+|---|---|---|
+| Caesar | one number | live rotating cipher wheel |
+| Vigenère | a keyword | the same machine, with the shift changing per letter |
+| One-time pad | as long as the message | generated fresh; "new pad" regenerates it |
+| Rotor | three start positions | real three-rotor Enigma — rotors I–III, reflector B |
+| RSA | a published N and e | four key sizes, real BigInt modular arithmetic |
+
+The rotor is not a toy approximation: fed all `A`s from positions `AAA` it produces `BDZGOWCXLTKSBTMCDLPBMUQOFXYHCX`, the published Enigma I test vector, and that's asserted in the suite as an **independent oracle** rather than a fixture of our own making. It's reciprocal (same settings decrypt, so the direction toggle hides itself) and no letter ever encrypts to itself — the leak that made cribs deadly in tab ⑤.
+
+There is no Shor mode, and the page says why: Shor is not a cipher. It's the only thing here with no encrypt side at all.
 
 ### ① Caesar and ③ Vigenère — breaking a key, not an alphabet
-- **All 25 Caesar decryptions at once**, each scored on letter-pair fit, best row marked. The lesson isn't technique, it's that the keyspace is too small to matter.
-- **Index of coincidence** bars for key lengths 1–12. English clusters near 0.067, random near 0.038; the shortest length that reaches English is the key length.
+- **All 25 Caesar decryptions at once.** You read them and pick the English one — no scores, no marked row, nothing pre-announced. The lesson isn't technique, it's that the keyspace is too small to matter.
+- **Index of coincidence** bars for key lengths 1–12. English clusters near 0.067, random near 0.038; you tap the shortest bar that reaches English.
+- **The machine's opinion is opt-in.** "Score them for me" and "Mark the peak for me" reveal the statistical answer *after* you've had a go — which is the actual teaching moment, since it shows a counter reaching by arithmetic the conclusion your eye reached by reading. Printing the answer above the evidence is the one thing this page must never do.
 - **Column solver** — pick a length and each column becomes a plain Caesar, solvable by hand or by chi-squared against English frequencies. The keyword spells itself out.
 - Verified end to end: the IC recovers lengths 3/5/7 and the solver recovers `KEY`, `RONIN` and `BABBAGE`.
 
@@ -93,7 +105,7 @@ Nothing here simulates a quantum computer. Faking that would fabricate the one t
 ## Tech Stack
 
 - **Frontend:** Single `web/index.html` — vanilla HTML/CSS/JS, no build step, no frameworks
-- **Testing:** [Playwright](https://playwright.dev/) — 67 end-to-end tests covering the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
+- **Testing:** [Playwright](https://playwright.dev/) — 82 end-to-end tests covering the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
   ```bash
   npx playwright test                                                  # local
   BASE_URL=https://securityronin-cryptlab.netlify.app npx playwright test   # against production

@@ -86,7 +86,7 @@
   input[type=text]{text-transform:uppercase}
 
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
-  .modes{display:inline-flex;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:4px}
+  .modes{display:inline-flex;flex-wrap:wrap;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:4px}
   .modes button{appearance:none;border:0;background:none;color:var(--muted);font:600 14px/1 inherit;
     padding:9px 15px;border-radius:8px;cursor:pointer;min-height:40px}
   .modes button.on{background:var(--gold);color:#20180a}
@@ -338,13 +338,23 @@
     <div class="card">
       <span class="era">Caesar c. 50 BC · Vigenère 1553 · the two ciphers you will break next</span>
       <h2>Encrypt something yourself</h2>
-      <p class="hint">Shift every letter along the alphabet and you have a <b>Caesar cipher</b>. Give it a keyword and it becomes <b>Vigenère</b>. Type below and watch it scramble — then go to the other two tabs and break ciphers built exactly this way. 打字睇住佢變密碼。</p>
+      <p class="hint">Every cipher this lab breaks, you can also build. Shift the alphabet and you have a <b>Caesar</b>; add a keyword and it is <b>Vigenère</b>; stretch the key to the length of the message and it becomes a <b>one-time pad</b>; move the alphabet after every letter and you have a <b>rotor machine</b>; abandon shared keys entirely and you have <b>RSA</b>. Type below and watch each one work — then go and break them. 打字睇住佢變密碼。</p>
+      <p class="hint" style="margin-top:-8px">There is no Shor mode, because Shor is not a cipher. It is the only thing on this page that has no encrypt side at all — an attack, and nothing else.</p>
       <label class="fld">Your message · 訊息</label>
       <textarea id="e_in" spellcheck="false">MEET ME AT MIDNIGHT</textarea>
       <div class="row">
         <div class="modes" id="e_modes">
           <button class="on" data-m="caesar">Caesar</button>
           <button data-m="vig">Vigenère</button>
+          <button data-m="pad">One-time pad</button>
+          <button data-m="rotor">Rotor</button>
+          <button data-m="rsa">RSA</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="modes" id="e_dir">
+          <button class="on" data-d="enc">Encrypt</button>
+          <button data-d="dec">Decrypt</button>
         </div>
         <div class="stepper" id="e_step">
           <button id="e_minus">−</button><span>shift <span class="val" id="e_shift">3</span></span><button id="e_plus">+</button>
@@ -353,6 +363,20 @@
       <div id="e_keywrap" style="display:none;margin-top:14px">
         <label class="fld">Keyword · 密鑰</label>
         <input type="text" id="e_key" value="RONIN" spellcheck="false">
+      </div>
+      <div id="e_padwrap" style="display:none;margin-top:14px">
+        <label class="fld">The pad · 一次性密碼本 <span style="text-transform:none;letter-spacing:0;color:var(--muted);font-weight:400">(as long as the message, and never twice)</span></label>
+        <div class="out stream" id="e_pad" style="min-height:0">—</div>
+        <div class="row"><button class="act" id="e_newpad">Fresh pad</button></div>
+      </div>
+      <div id="e_rotorwrap" style="display:none;margin-top:14px">
+        <label class="fld">Rotor start positions · 轉子起始位</label>
+        <input type="text" id="e_rotor" value="AAA" maxlength="3" spellcheck="false">
+        <div class="meter">Rotors I, II and III with reflector B, as in a three-rotor Enigma. The machine is <b>reciprocal</b> — the same settings and the same button undo it, which is why one operator could both send and receive. It also means <b>no letter can ever encrypt to itself</b>, and that single leak is what made cribs so deadly in tab ⑤.</div>
+      </div>
+      <div id="e_rsawrap" style="display:none;margin-top:14px">
+        <div class="modes" id="e_rsakeys"></div>
+        <dl class="kv" id="e_rsainfo"></dl>
       </div>
       <svg class="disk" id="disk" viewBox="-100 -100 200 200" aria-hidden="true">
         <polygon class="mark" points="0,-96 -6,-84 6,-84"></polygon>
@@ -392,8 +416,11 @@
 
       <div class="tool">
         <div class="tlabel">Try every key <span>— all 25 of them, at once</span></div>
-        <div class="tbody">Each row is the message decrypted with one shift. Only one reads as English; the <b>fit</b> column scores each on letter-pair statistics, and the best is marked. Tap a row to keep it.</div>
+        <div class="tbody">Each row is the message decrypted with one shift. <b>One of them is English and you can see which.</b> Tap it to keep it. No statistics, no tooling — a human eye is the entire attack, which is exactly how little 25 keys are worth.</div>
         <div class="shifts" id="c_grid"></div>
+        <div class="row">
+          <button class="act" id="c_score">Score them for me</button>
+        </div>
       </div>
 
       <label class="fld" style="margin-top:18px">Plaintext · 明文</label>
@@ -426,6 +453,7 @@
         <div class="tbody">Pick a key length, take every Nth letter, and measure how often two random letters from that group match. Real English clusters around <b>0.067</b>; a random jumble sits near <b>0.038</b>. When you guess the right length, every column becomes plain English again and the bar jumps. Tap the tallest.</div>
         <div class="icbars" id="s_ic"></div>
         <div class="meter" id="s_iclab"></div>
+        <div class="row"><button class="act" id="s_icscore">Mark the peak for me</button></div>
 
         <div class="tlabel" style="margin-top:16px">Step 2 · solve each column as a Caesar</div>
         <div class="tbody">Each column below is a single Caesar shift. Nudge one by hand, or let it pick the shift whose letter frequencies best match English. The key spells itself out as you go.</div>
@@ -765,6 +793,64 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
   return s.replace(/[A-Za-z]/g,c=>{const b=c<='Z'?65:97;const k=key.charCodeAt(ki%key.length)-65;ki++;
     return String.fromCharCode((c.charCodeAt(0)-b+k+26)%26+b);});}
 
+/* ================= rotor machine (three-rotor Enigma) =================
+   Historical wirings and notches. The reflector makes it reciprocal — the same
+   settings decrypt — and also guarantees no letter ever maps to itself, the leak
+   cribs exploited. Ring settings are fixed at A and there is no plugboard. */
+const ROTORS={
+  I  :{w:"EKMFLGDQVZNTOWYHXUSPAIBRCJ", n:16},   // notch Q
+  II :{w:"AJDKSIRUXBLHWTMCQGZNPYFVOE", n:4 },   // notch E
+  III:{w:"BDFHJLCPRTXVZNYEIWGAKMUSQO", n:21}    // notch V
+};
+const REFLECTOR_B="YRUHQSLDPXNGOKMIEBFZCWVJAT";
+const ROTOR_ORDER=["I","II","III"];             // left, middle, right
+
+function rotorMachine(text,startPos){
+  const pos=startPos.slice();
+  const fwd=(r,p,c)=>(ROTORS[r].w.charCodeAt((c+p)%26)-65-p+26)%26;
+  const bwd=(r,p,c)=>(ROTORS[r].w.indexOf(String.fromCharCode(65+((c+p)%26)))-p+26)%26;
+  function step(){
+    const mNotch=ROTORS[ROTOR_ORDER[1]].n, rNotch=ROTORS[ROTOR_ORDER[2]].n;
+    if(pos[1]===mNotch){pos[1]=(pos[1]+1)%26;pos[0]=(pos[0]+1)%26;}   // double step
+    else if(pos[2]===rNotch){pos[1]=(pos[1]+1)%26;}
+    pos[2]=(pos[2]+1)%26;
+  }
+  return text.replace(/[A-Za-z]/g,ch=>{
+    step();
+    let c=ch.toUpperCase().charCodeAt(0)-65;
+    c=fwd(ROTOR_ORDER[2],pos[2],c);c=fwd(ROTOR_ORDER[1],pos[1],c);c=fwd(ROTOR_ORDER[0],pos[0],c);
+    c=REFLECTOR_B.charCodeAt(c)-65;
+    c=bwd(ROTOR_ORDER[0],pos[0],c);c=bwd(ROTOR_ORDER[1],pos[1],c);c=bwd(ROTOR_ORDER[2],pos[2],c);
+    return String.fromCharCode(65+c);
+  });
+}
+
+/* ================= RSA primitives, shared by the make and break tabs ================= */
+const rsaModPow=(b,x,m)=>{let r=1n;b%=m;while(x>0n){if(x&1n)r=r*b%m;b=b*b%m;x>>=1n;}return r;};
+function rsaModInv(a,m){
+  let [o,r,s,t]=[m,a,0n,1n];
+  while(r>0n){const q=o/r;[o,r]=[r,o-q*r];[s,t]=[t,s-q*t];}
+  return ((s%m)+m)%m;
+}
+// two letters per block: A=1..Z=26, space=0, so every block is under 2627
+function rsaEncode(s){
+  const t=s.toUpperCase().replace(/[^A-Z ]/g,''),out=[];
+  const v=c=>c===undefined||c===' '?0:c.charCodeAt(0)-64;
+  for(let i=0;i<t.length;i+=2)out.push(BigInt(v(t[i])*100+v(t[i+1])));
+  return out;
+}
+const rsaDecode=blocks=>blocks.map(b=>{
+  const n=Number(b),ch=k=>k===0?' ':String.fromCharCode(64+k);
+  return ch(Math.floor(n/100))+ch(n%100);
+}).join('').replace(/\s+$/,'');
+
+const RSA_KEYS=[
+  {label:'4-digit', p:61n, q:53n, e:17n},
+  {label:'7-digit', p:1571n, q:1999n, e:17n},
+  {label:'12-digit', p:104729n, q:1299709n, e:65537n},
+  {label:'16-digit', p:32452843n, q:49979687n, e:65537n}
+];
+
 /* ================= shared English statistics ================= */
 const ENGORDER="ETAOINSHRDLCUMWFGYPBVKJXQZ";
 const ENGFREQ={E:12.7,T:9.1,A:8.2,O:7.5,I:7.0,N:6.7,S:6.3,H:6.1,R:6.0,D:4.3,L:4.0,C:2.8,U:2.8,
@@ -845,23 +931,95 @@ function makeBigrams(texts){
   const inp=document.getElementById('e_in'), out=document.getElementById('e_out');
   const shiftEl=document.getElementById('e_shift'), keyWrap=document.getElementById('e_keywrap');
   const keyEl=document.getElementById('e_key'), step=document.getElementById('e_step'), disk=document.getElementById('disk');
-  let mode='caesar', shift=3;
+  const dirEl=document.getElementById('e_dir'), padWrap=document.getElementById('e_padwrap'),
+    padEl=document.getElementById('e_pad'), rotorWrap=document.getElementById('e_rotorwrap'),
+    rotorEl=document.getElementById('e_rotor'), rsaWrap=document.getElementById('e_rsawrap'),
+    rsaKeysEl=document.getElementById('e_rsakeys'), rsaInfo=document.getElementById('e_rsainfo');
+  let mode='caesar', shift=3, dir='enc', pad='', rsaKey=0;
   function ring(el,r){el.innerHTML='';for(let i=0;i<26;i++){const ang=i*360/26;
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('transform','rotate('+ang+') translate(0,'+(-r)+') rotate(180)');
     t.setAttribute('text-anchor','middle');t.setAttribute('dominant-baseline','middle');
     t.textContent=String.fromCharCode(65+i);el.appendChild(t);}}
   ring(document.getElementById('ringOuter'),78); ring(document.getElementById('ringInner'),54);
+  const letters=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
+  const L=n=>String.fromCharCode(65+((n%26)+26)%26);
+
+  function freshPad(){
+    const n=Math.max(letters(inp.value).length,1);
+    let s='';for(let i=0;i<n;i++)s+=L(Math.floor(Math.random()*26));
+    pad=s;padEl.textContent=pad;
+  }
+  function padApply(text,sign){
+    let i=0;
+    return text.replace(/[A-Za-z]/g,ch=>{
+      if(i>=pad.length){i++;return ch;}                 // a pad only covers what it covers
+      const k=pad.charCodeAt(i)-65;i++;
+      return L(ch.toUpperCase().charCodeAt(0)-65+sign*k);
+    });
+  }
+  function rsaState(){
+    const k=RSA_KEYS[rsaKey], N=k.p*k.q, phi=(k.p-1n)*(k.q-1n);
+    return {...k,N,phi,d:rsaModInv(k.e,phi)};
+  }
+  function renderRsaInfo(){
+    const s=rsaState();
+    rsaInfo.innerHTML='<dt>Public</dt><dd>N = '+s.N+' · e = '+s.e+'</dd>'+
+      '<dt>Private</dt><dd style="color:var(--teal)">d = '+s.d+'</dd>'+
+      '<dt>Note</dt><dd style="color:var(--muted)">Anyone holding N and e can encrypt. Only d decrypts — and computing d needs p and q, which is tab ⑦.</dd>';
+  }
+
   function render(){
-    if(mode==='caesar'){out.textContent=caesar(inp.value,shift);
-      document.getElementById('ringInner').setAttribute('transform','rotate('+(shift*360/26)+')');}
-    else out.textContent=vigenere(inp.value,keyEl.value);
+    const enc=dir==='enc';
+    if(mode==='caesar'){
+      out.textContent=caesar(inp.value,enc?shift:26-shift);
+      document.getElementById('ringInner').setAttribute('transform','rotate('+(shift*360/26)+')');
+    } else if(mode==='vig'){
+      const k=keyEl.value;
+      out.textContent=enc?vigenere(inp.value,k)
+        :vigenere(inp.value,(k||'').toUpperCase().replace(/[^A-Z]/g,'').split('').map(c=>L(26-(c.charCodeAt(0)-65))).join(''));
+    } else if(mode==='pad'){
+      if(!pad)freshPad();
+      out.textContent=padApply(inp.value,enc?1:-1);
+    } else if(mode==='rotor'){
+      const p=(rotorEl.value.toUpperCase().replace(/[^A-Z]/g,'')+'AAA').slice(0,3)
+        .split('').map(c=>c.charCodeAt(0)-65);
+      out.textContent=rotorMachine(inp.value,p);       // reciprocal: direction is irrelevant
+    } else {
+      const s=rsaState();
+      if(enc) out.textContent=rsaEncode(inp.value).map(m=>rsaModPow(m,s.e,s.N)).join(' ');
+      else {
+        const blocks=inp.value.trim().split(/\s+/).filter(x=>/^\d+$/.test(x)).map(BigInt);
+        out.textContent=blocks.length?rsaDecode(blocks.map(c=>rsaModPow(c,s.d,s.N)))
+          :'(paste the space-separated numbers from an RSA encryption)';
+      }
+    }
+  }
+  function syncControls(){
+    keyWrap.style.display=mode==='vig'?'block':'none';
+    padWrap.style.display=mode==='pad'?'block':'none';
+    rotorWrap.style.display=mode==='rotor'?'block':'none';
+    rsaWrap.style.display=mode==='rsa'?'block':'none';
+    step.style.display=mode==='caesar'?'inline-flex':'none';
+    disk.style.display=mode==='caesar'?'block':'none';
+    dirEl.style.display=mode==='rotor'?'none':'inline-flex';   // a rotor undoes itself
   }
   document.getElementById('e_modes').onclick=e=>{const b=e.target.closest('button');if(!b)return;
     mode=b.dataset.m;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
-    keyWrap.style.display=mode==='vig'?'block':'none';
-    step.style.display=mode==='vig'?'none':'inline-flex';
-    disk.style.display=mode==='vig'?'none':'block';render();};
+    if(mode==='pad')freshPad();
+    syncControls();render();};
+  dirEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    dir=b.dataset.d;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));render();};
+  document.getElementById('e_newpad').onclick=()=>{freshPad();render();};
+  rotorEl.oninput=render;
+  RSA_KEYS.forEach((k,i)=>{
+    const b=document.createElement('button');b.textContent=k.label;b.dataset.i=i;
+    if(i===0)b.classList.add('on');
+    b.onclick=()=>{rsaKey=i;rsaKeysEl.querySelectorAll('button').forEach(x=>x.classList.toggle('on',+x.dataset.i===i));
+      renderRsaInfo();render();};
+    rsaKeysEl.appendChild(b);
+  });
+  renderRsaInfo();syncControls();
   document.getElementById('e_plus').onclick=()=>{shift=(shift+1)%26;shiftEl.textContent=shift;render();};
   document.getElementById('e_minus').onclick=()=>{shift=(shift+25)%26;shiftEl.textContent=shift;render();};
   inp.oninput=render; keyEl.oninput=render; render();
@@ -1160,7 +1318,7 @@ function makeBigrams(texts){
     VACC=document.getElementById('s_vacc');
 
   let active=0, cipher='', klen=0, colShift=[], picked=-1;
-  let cActive=0, cCipher='';
+  let cActive=0, cCipher='', cScored=false, icScored=false;
 
   const onlyLetters=t=>t.toUpperCase().replace(/[^A-Z]/g,'');
   const unshift=(t,s)=>caesar(t,(26-(s%26))%26);              // decrypt = shift back
@@ -1234,6 +1392,8 @@ function makeBigrams(texts){
   }
 
   /* ---------- ① Caesar: read all 25 answers ---------- */
+  /* The machine's opinion is withheld until the human has had a go. Printing the
+     answer above the evidence is the one thing this page must never do. */
   function buildGrid(){
     GRID.innerHTML='';
     const scored=[];
@@ -1241,16 +1401,17 @@ function makeBigrams(texts){
     const top=scored.reduce((a,b)=>b.f>a.f?b:a);
     scored.forEach(o=>{
       const r=document.createElement('button');
-      r.className='srow'+(o.s===top.s?' best':'')+(o.s===picked?' on':'');
+      r.className='srow'+(cScored&&o.s===top.s?' best':'')+(o.s===picked?' on':'');
       r.dataset.s=o.s;
       r.innerHTML='<span class="k">'+String(o.s).padStart(2,'0')+'</span>'+
-        '<span class="t"></span><span class="f">'+o.f+'</span>';
+        '<span class="t"></span><span class="f">'+(cScored?o.f:'')+'</span>';
       r.querySelector('.t').textContent=o.d.slice(0,64);
       r.onclick=()=>{picked=o.s;buildGrid();renderCaesar();};
       GRID.appendChild(r);
     });
-    if(picked<0)
-      CMET.innerHTML='<b>'+onlyLetters(cCipher).length+'</b> letters · <b>25</b> possible keys · best letter-pair fit is at shift <b class="good">'+top.s+'</b>';
+    if(picked<0&&!cScored)
+      CMET.innerHTML='<b>'+onlyLetters(cCipher).length+'</b> letters · <b>25</b> possible keys · '+
+        'read down the list and tap the one that is English. You need no tool for this, which is the point.';
   }
   function renderCaesar(){
     const c=CH[cActive];
@@ -1260,11 +1421,16 @@ function makeBigrams(texts){
       (picked===c.key?'<b class="good">this is the key</b>':'<b class="warn">not English — try another row</b>');
   }
   function loadCaesar(i){
-    cActive=i;picked=-1;
+    cActive=i;picked=-1;cScored=false;
     cCipher=caesar(CH[i].plain,CH[i].key);
     CTA.value=cCipher;
     markPicker(CP,i);buildGrid();renderCaesar();
   }
+  document.getElementById('c_score').onclick=()=>{
+    cScored=true;buildGrid();
+    if(picked<0)CMET.innerHTML='Every row now carries its letter-pair fit, and the highest is marked. '+
+      'The machine reached the same answer your eye did — by counting, with no idea what the words mean.';
+  };
   function buildIC(){
     ICB.innerHTML='';
     const vals=[];for(let L=1;L<=12;L++)vals.push({L,v:icFor(cipher,L)});
@@ -1274,7 +1440,7 @@ function makeBigrams(texts){
     const peak=strong.length?strong[0].L:vals.reduce((a,b)=>b.v>a.v?b:a).L;
     vals.forEach(o=>{
       const c=document.createElement('button');
-      c.className='icc'+(o.L===peak?' peak':'')+(o.L===klen?' on':'');
+      c.className='icc'+(icScored&&o.L===peak?' peak':'')+(o.L===klen?' on':'');
       c.dataset.l=o.L;
       c.innerHTML='<span class="b"><i style="height:'+Math.max(4,100*o.v/max)+'%"></i></span>'+
         '<span class="n">'+o.L+'</span><span class="v">'+o.v.toFixed(3)+'</span>';
@@ -1282,7 +1448,11 @@ function makeBigrams(texts){
       ICB.appendChild(c);
     });
     ICL.innerHTML='English sits near <b class="good">0.067</b>, random near <b class="bad">0.038</b>. '+
-      'Shortest length reaching English: <b class="good">'+peak+'</b>'+(klen?' · you picked <b>'+klen+'</b>':'');
+      (icScored
+        ? 'Shortest length reaching English: <b class="good">'+peak+'</b>. Multiples of it score well too — '+
+          'a key of length '+peak+' repeats every '+(peak*2)+' letters as well.'
+        : '<b>Tap the shortest bar that reaches English.</b> You can read that off the chart yourself.')+
+      (klen?' · you picked <b>'+klen+'</b>':'');
   }
   function setLen(L){
     klen=L;colShift=new Array(L).fill(0);
@@ -1317,7 +1487,7 @@ function makeBigrams(texts){
     VACC.innerHTML=msg;
   }
   function load(i){
-    active=i;klen=0;colShift=[];
+    active=i;klen=0;colShift=[];icScored=false;
     cipher=vigenere(CH[i].plain,CH[i].key);
     VTA.value=cipher;
     markPicker(VP,i);
@@ -1325,6 +1495,7 @@ function makeBigrams(texts){
     buildIC();buildCols();render();
   }
 
+  document.getElementById('s_icscore').onclick=()=>{icScored=true;buildIC();};
   document.getElementById('s_auto').onclick=()=>{
     if(!klen){ICL.innerHTML='<b class="warn">Pick a key length first — tap one of the bars.</b>';return;}
     for(let i=0;i<klen;i++)colShift[i]=bestShift(columnOf(i));
