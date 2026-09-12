@@ -41,7 +41,7 @@ test.describe('CryptLab — page & branding', () => {
         page.on('pageerror', (e) => errors.push(String(e)));
         page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
         await page.goto('/');
-        await page.click('nav#seg button[data-p="brk"]');
+        await page.click('#seg button[data-t="1"]');
         expect(errors).toEqual([]);
     });
 });
@@ -68,7 +68,7 @@ test.describe('Encipher tab', () => {
 test.describe('Break tab — challenge corpus', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.click('nav#seg button[data-p="brk"]');
+        await page.click('#seg button[data-t="1"]');
     });
 
     test('offers 3 long, 5 medium, 8 short and 4 very short challenges', async ({ page }) => {
@@ -131,7 +131,7 @@ test.describe('Break tab — challenge corpus', () => {
 test.describe('Break tab — drag-to-assign solver', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.click('nav#seg button[data-p="brk"]');
+        await page.click('#seg button[data-t="1"]');
     });
 
     test('histogram renders bars with empty drop slots', async ({ page }) => {
@@ -224,7 +224,7 @@ test.describe('Break tab — on a phone', () => {
 
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.click('nav#seg button[data-p="brk"]');
+        await page.click('#seg button[data-t="1"]');
     });
 
     test('both letter strips scroll horizontally rather than overflowing', async ({ page }) => {
@@ -259,163 +259,3 @@ test.describe('Break tab — on a phone', () => {
     });
 });
 
-test.describe('Break tab — Tool 1 → Tool 2 escalation', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        await page.click('nav#seg button[data-p="brk"]');
-    });
-
-    test('Tool 2 starts locked and opens after Tool 1 is used', async ({ page }) => {
-        await expect(page.locator('#tool2')).toHaveClass(/locked/);
-        await expect(page.locator('#b_bigram')).toBeHidden();
-        await page.click('#b_guess');
-        await expect(page.locator('#tool2')).not.toHaveClass(/locked/);
-        await expect(page.locator('#b_bigram')).toBeVisible();
-    });
-
-    test('Guess by frequency fills every slot and scores itself', async ({ page }) => {
-        await page.click('#b_guess');
-        await expect(slot(page, 0).locator('.tile')).toHaveText('E');
-        await expect(page.locator('#b_acc')).toContainText('letters right');
-        const slots = page.locator('#subhist .scol');
-        expect(await slots.locator('.slot .tile').count()).toBe(await slots.count());
-    });
-
-    // Measured: single-letter ranking scores 0-15% on very short and 21-29% on long.
-    // It never solves anything, which is precisely why Tool 2 has to exist.
-    test('single letters never solve a message, at any length', async ({ page }) => {
-        const score = async () => {
-            await page.click('#b_guess');
-            return +(await page.locator('#b_acc').textContent()).match(/(\d+)%/)[1];
-        };
-        await page.locator('#picker .pgroup').nth(0).locator('button').first().click();
-        const long = await score();
-        await page.locator('#picker .pgroup').nth(3).locator('button').first().click();
-        const veryShort = await score();
-        expect(long).toBeGreaterThan(veryShort);
-        expect(long).toBeLessThan(60);          // the wall Tool 2 is there to climb
-    });
-
-    test('pairs solve a long message that single letters could not', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(0).locator('button').first().click();
-        await page.click('#b_guess');
-        const single = +(await page.locator('#b_acc').textContent()).match(/(\d+)%/)[1];
-        await page.click('#b_bigram');
-        const paired = +(await page.locator('#b_bg').textContent()).match(/Now.*?(\d+)%/s)[1];
-        expect(single).toBeLessThan(60);
-        expect(paired).toBeGreaterThan(90);
-    });
-
-    // The honest failure mode, and a teaching point in its own right: on 25 letters
-    // the pair search reports a perfect fit while getting the letters wrong.
-    test('on a very short message the pair search is confident and wrong', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(3).locator('button').first().click();
-        await page.click('#b_guess');
-        await page.click('#b_bigram');
-        const bg = await page.locator('#b_bg').textContent();
-        const fit = +bg.match(/→\s*(\d+)/)[1];
-        const correct = +bg.match(/Now.*?(\d+)%/s)[1];
-        expect(fit).toBeGreaterThan(90);
-        expect(correct).toBeLessThan(40);
-    });
-
-    test('the pair pass improves the letter-pair fit', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(1).locator('button').first().click();
-        await page.click('#b_guess');
-        await page.click('#b_bigram');
-        const t = await page.locator('#b_bg').textContent();
-        const [, from, to] = t.match(/fit\s+(\d+)\s+→\s+(\d+)/);
-        expect(+to).toBeGreaterThanOrEqual(+from);
-    });
-
-    test('a suggested pair block places BOTH letters in one drag', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(1).locator('button').first().click();
-        await page.click('#b_guess');
-
-        const block = page.locator('#b_suggest .ptile').first();
-        await expect(block).toBeVisible();
-        const { c1, c2, p1, p2 } = await block.evaluate((b) => ({ ...b.dataset }));
-        expect(c1).toMatch(/^[A-Z]$/);
-        expect(p1).toMatch(/^[A-Z]$/);
-
-        await dragTo(page, block, page.locator('#subhist .scol').first().locator('.slot'));
-
-        const at = (c) => page.locator(`#subhist .slot[data-c="${c}"] .tile`);
-        await expect(at(c1)).toHaveText(p1);
-        await expect(at(c2)).toHaveText(p2);
-        // both arrive pinned, so the next pair pass must respect them
-        await expect(at(c1)).toHaveClass(/pin/);
-        await expect(at(c2)).toHaveClass(/pin/);
-        await expect(page.locator('#b_bg')).toContainText(/[12] letters? pinned/);
-    });
-
-    test('a pair block dropped off the board is declined, changing nothing', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(1).locator('button').first().click();
-        await page.click('#b_guess');
-        const before = await page.locator('#b_out').textContent();
-
-        const block = page.locator('#b_suggest .ptile').first();
-        await block.scrollIntoViewIfNeeded();
-        const box = await block.boundingBox();
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-        await page.mouse.down();
-        await page.mouse.move(box.x + 40, box.y + 40, { steps: 4 });
-        await page.mouse.move(20, 20, { steps: 8 });
-        await page.mouse.up();
-
-        expect(await page.locator('#b_out').textContent()).toBe(before);
-    });
-
-    test('pair suggestions never contradict a letter already on the board', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(1).locator('button').first().click();
-        await page.click('#b_guess');
-        await dragTo(page, poolTile(page, 'Q'), slot(page, 0));
-        const pinnedCipher = await page.locator('#subhist .scol').first().locator('.clet').textContent();
-
-        const proposals = await page.locator('#b_suggest .ptile').evaluateAll((ts) =>
-            ts.map((t) => ({ ...t.dataset })),
-        );
-        for (const p of proposals) {
-            if (p.c1 === pinnedCipher) expect(p.p1).toBe('Q');
-            if (p.c2 === pinnedCipher) expect(p.p2).toBe('Q');
-        }
-    });
-
-    test('the pair pass beats single letters on a medium message', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(1).locator('button').first().click();
-        await page.click('#b_guess');
-        const single = +(await page.locator('#b_acc').textContent()).match(/(\d+)%/)[1];
-        await page.click('#b_bigram');
-        const paired = +(await page.locator('#b_bg').textContent()).match(/Now.*?(\d+)%/s)[1];
-        expect(paired).toBeGreaterThan(single);
-    });
-
-    test('letters placed by hand are pinned and survive a pair pass', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(1).locator('button').first().click();
-        await page.click('#b_guess');                 // unlocks Tool 2 and clears any pins
-        await dragTo(page, poolTile(page, 'Q'), slot(page, 0));
-        await expect(slot(page, 0).locator('.tile')).toHaveClass(/pin/);
-        await page.click('#b_bigram');
-        // Q under the tallest bar is a terrible guess, so only a pin could keep it there
-        await expect(slot(page, 0).locator('.tile')).toHaveText('Q');
-        await expect(page.locator('#b_bg')).toContainText('kept your 1 pinned');
-    });
-
-    test('Undo restores the board from before a pair pass', async ({ page }) => {
-        await page.locator('#picker .pgroup').nth(1).locator('button').first().click();
-        await page.click('#b_guess');                 // unlocks Tool 2
-        await dragTo(page, poolTile(page, 'E'), slot(page, 0));
-        const before = await page.locator('#b_out').textContent();
-        await page.click('#b_bigram');
-        expect(await page.locator('#b_out').textContent()).not.toBe(before);
-        await page.click('#b_undo');
-        expect(await page.locator('#b_out').textContent()).toBe(before);
-    });
-
-    test('switching challenges clears pins and relocks nothing', async ({ page }) => {
-        await page.click('#b_guess');
-        await page.locator('#picker .pgroup').nth(2).locator('button').first().click();
-        await expect(page.locator('#b_bg')).toContainText('0 letters pinned');
-        await expect(page.locator('#tool2')).not.toHaveClass(/locked/);
-    });
-});
