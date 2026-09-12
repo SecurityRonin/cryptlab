@@ -331,7 +331,7 @@
       <button data-p="shor">⑧ Shor<span class="z">1994</span></button>
     </nav>
   </div>
-  <p class="lede" style="margin:8px auto 0;font-size:12.5px">Each tab is a sharper tool than the one before it, in the order history found them. Ciphers do not get weaker — <b style="color:var(--ink)">the people attacking them get better</b>.</p>
+  <p class="lede" style="margin:8px auto 0;font-size:12.5px">Nine tabs, in the order history found them. Each cipher leaks something different, and each tool works <b style="color:var(--ink)">only while its assumptions hold</b>.</p>
 
   <!-- ============ ENCRYPT ============ -->
   <section class="panel on" id="enc">
@@ -367,12 +367,13 @@
       <div id="e_padwrap" style="display:none;margin-top:14px">
         <label class="fld">The pad · 一次性密碼本 <span style="text-transform:none;letter-spacing:0;color:var(--muted);font-weight:400">(as long as the message, and never twice)</span></label>
         <div class="out stream" id="e_pad" style="min-height:0">—</div>
+        <div class="meter" id="e_padmsg"></div>
         <div class="row"><button class="act" id="e_newpad">Fresh pad</button></div>
       </div>
       <div id="e_rotorwrap" style="display:none;margin-top:14px">
         <label class="fld">Rotor start positions · 轉子起始位</label>
         <input type="text" id="e_rotor" value="AAA" maxlength="3" spellcheck="false">
-        <div class="meter">Rotors I, II and III with reflector B, as in a three-rotor Enigma. The machine is <b>reciprocal</b> — the same settings and the same button undo it, which is why one operator could both send and receive. It also means <b>no letter can ever encrypt to itself</b>, and that single leak is what made cribs so deadly in tab ⑤.</div>
+        <div class="meter">Rotors I, II and III with reflector B, as in a three-rotor Enigma. The machine is <b>reciprocal</b> — the same settings and the same button undo it, which is why one operator could both send and receive. Separately, because reflector B pairs every letter with a <i>different</i> one, <b>no letter can ever encrypt to itself</b>. That second property is a fact about the reflector's wiring, not a consequence of reciprocity, and it is what made cribs so deadly in tab ⑤.</div>
       </div>
       <div id="e_rsawrap" style="display:none;margin-top:14px">
         <div class="modes" id="e_rsakeys"></div>
@@ -429,6 +430,7 @@
       <details class="edu"><summary>Why Caesar never stood a chance</summary>
         <div class="b"><p>A cipher's strength has a hard ceiling: the number of keys an attacker must try. Caesar has <b>25</b>. You just read all of them on one screen. It does not matter how clever the method is or how well it is hidden — 25 guesses is not security, it is a formality.</p>
         <p>This is why modern ciphers quote key sizes in bits. AES-128 has roughly 3.4 × 10³⁸ keys. The method is public, exactly as Kerckhoffs demanded; the defence is that exhausting the keyspace is not physically possible. Caesar's defence was that you would not bother.</p>
+        <p><b>Except that the number on the box is not the number that protects you.</b> In 2006 a Debian maintainer, tidying up compiler warnings in OpenSSL, commented out two lines that fed entropy into the random number generator. He had even asked on a mailing list whether it was safe, and got an ambiguous answer. The keys still <i>said</i> 1024 or 2048 bits. But only <b>32,768</b> distinct values could ever be generated, and every SSH key, SSL certificate and VPN key made on a Debian system for the next twenty months could be enumerated — a keyspace smaller than a Caesar cipher's is large, discovered in 2008 after two years in production. You just broke 25 keys by reading. Someone with a laptop broke 32,768 the same way.</p>
         <p><b>What comes next.</b> Enlarging the key is the obvious repair. Scramble the whole alphabet instead of sliding it and you get 26! ≈ 4 × 10²⁶ keys — far too many to try. That cipher held until a scholar in Baghdad noticed the key space was never the point. <b>Tab ②.</b></p></div>
       </details>
     </div>
@@ -536,7 +538,9 @@
       <div class="tool" id="tool3" hidden>
         <div class="tlabel">Tool ⑤ · cribs <span>— guess a word, not a letter</span></div>
         <div class="tbody">
-          <p style="margin:0 0 .5em">Statistics run out. What does not run out is that you usually know <b>something</b> about the message: it is a quotation, or a weather report, or a telegram that ends in <span class="k">STOP</span>. A word you can guess is called a <b>crib</b>, and one correct crib hands you several letters at once — far more than any single bar ever will.</p>
+          <p style="margin:0 0 .5em"><b>Bletchley Park, 1940.</b> Enigma had about 159 quintillion daily settings, and no amount of counting would ever touch it. What broke it was not mathematics about the machine but knowledge about the people using it. German operators sent a weather report every morning, in the same format, at the same hour. They signed off the same way. So a codebreaker could say: <i>somewhere in this message is the word WETTER</i> — and start not from 159 quintillion, but from a guess. The machine even helped, because no letter could ever encipher to itself, so any alignment where the guess collided with the ciphertext was instantly eliminated. At Bletchley they called that a <b>crash</b>.</p>
+          <p style="margin:0 0 .5em">That guess is a <b>crib</b>, and it is the technique on this tab. Statistics run out; what does not run out is that you usually know <i>something</i> about the message. One correct crib hands you several letters at once — far more than any single bar ever will.</p>
+          <p style="margin:0 0 .5em"><b>What this board is and is not.</b> The message below is a fixed substitution cipher, not Enigma. You can build a real Enigma on the Encrypt tab and watch the no-self-encryption property for yourself; here you are practising the <i>reasoning</i> Bletchley used, on a cipher simple enough to finish in a browser.</p>
           <p style="margin:0">Word boundaries leak the shape. A cipher word like <span class="k">GUUJ</span> has a doubled letter in third and fourth place, and only a handful of English words fit that shape at all. Pick a word below to see which ones do; every candidate shown is already consistent with the letters on your board.</p>
         </div>
 
@@ -566,13 +570,14 @@
         <p style="margin-top:.6em">The letters above update to match whichever challenge you pick. The method never changes — only the mapping does.</p></div>
       </details>
       <details class="edu"><summary>Why this works — Al-Kindi, 9th century</summary>
-        <div class="b"><p>In Baghdad's House of Wisdom, <b>Al-Kindi</b> wrote the first known description of frequency analysis around 850 CE. His insight: a substitution cipher hides <i>which</i> symbol stands for a letter, but not <i>how often</i> it appears. Count the symbols, compare to a language's known letter frequencies, and the mapping unravels. One idea broke every simple cipher for the next 800 years.</p></div>
+        <div class="b"><p>In Baghdad's House of Wisdom, <b>Al-Kindi</b> wrote the first known description of frequency analysis around 850 CE. His insight: a substitution cipher hides <i>which</i> symbol stands for a letter, but not <i>how often</i> it appears. Count the symbols, compare to a language's known letter frequencies, and the mapping unravels. That one idea made every fixed-substitution cipher readable to anyone who knew it — and such ciphers stayed in serious use for centuries afterwards anyway, because the people relying on them did not.</p></div>
       </details>
       <details class="edu"><summary>The cost of a broken cipher — Mary, Queen of Scots</summary>
-        <div class="b"><p>In 1586 Mary plotted against Elizabeth I in letters enciphered with a substitution "nomenclator." Walsingham's codebreaker Thomas Phelippes broke them with frequency analysis — and forged a postscript to expose her fellow plotters. The decrypts were read at her trial. She was executed in 1587. Same technique you're using now.</p></div>
+        <div class="b"><p>In 1586 Mary plotted against Elizabeth I in letters enciphered with a <b>nomenclator</b> — a substitution alphabet plus a codebook of symbols standing for whole names and phrases. Walsingham's codebreaker Thomas Phelippes broke it by counting symbols, then forged a postscript onto Mary's letter asking Babington to name the gentlemen who would act with him. The decrypts were read at her trial. She was executed in 1587.</p>
+        <p>The counting is the same idea you are using here; the cipher is not the same object. A nomenclator's codebook entries have no letter frequencies to exploit, which is exactly why breaking one took a codebreaker rather than an afternoon.</p></div>
       </details>
       <details class="edu"><summary>The timeline, and why each tab beats the last</summary>
-        <div class="b"><p>The tabs across the top are a history of cryptanalysis in the order it happened, and each technique is strictly stronger than the one before it.</p>
+        <div class="b"><p><b>A warning about the shape of this page.</b> The tabs are chronological, but they are <i>not</i> a ladder where each tool supersedes the last. Every tool below attacks a different weakness under different assumptions. Bigrams do not replace the Vigenère procedure — they cannot touch a repeating key. A crib is not universally stronger than counting; it buys power by <b>assuming you know a word</b>. And nothing in tabs ①–⑤ touches a correctly used one-time pad. What actually accumulates is not power but <b>options</b>: more ways for a cipher to leak, and more kinds of evidence worth collecting.</p>
         <ol>
           <li><b>① Caesar · antiquity.</b> Twenty-five keys. Exhaust them. No technique required, and none was ever invented, because none was needed.</li>
           <li><b>② Single letters · c. 850.</b> Al-Kindi in Baghdad. Scrambling the whole alphabet defeats exhaustion — 4 × 10²⁶ keys — but not counting. This is the first cryptanalysis known to history.</li>
@@ -647,7 +652,12 @@
           <input type="text" id="otp_crib" spellcheck="false" value="THE" style="flex:1;min-width:150px">
           <button class="act gold" id="otp_drag">✦ Drag it along</button>
         </div>
-        <div class="meter" id="otp_res">Type a word you think appears in either message, then drag it across every position.</div>
+        <div class="row" style="margin-top:8px">
+          <label class="meter" style="margin:0;display:flex;align-items:center;gap:7px;cursor:pointer">
+            <input type="checkbox" id="otp_in2" style="width:auto;margin:0"> assume the crib is in <b>message 2</b> instead of message 1
+          </label>
+        </div>
+        <div class="meter" id="otp_res">Type a word you think appears in one of the messages, then drag it across every position. <b>Which message you assume it is in changes the arithmetic</b>, so pick one.</div>
         <div class="shifts" id="otp_hits"></div>
       </div>
 
@@ -655,11 +665,17 @@
         <div class="b"><p>In 1949 Claude Shannon defined <b>perfect secrecy</b>: a ciphertext gives an attacker <i>no information whatsoever</i> about the plaintext beyond its length. Formally, the probability of any message given the ciphertext equals its probability beforehand. He proved the one-time pad achieves it — and, more brutally, that <b>any</b> cipher achieving it needs a key at least as long as the message. There is no clever scheme waiting to be found that gives perfect secrecy on a short key. That door is closed by arithmetic.</p>
         <p>This is the only cipher on this page that is not merely unbroken but <i>unbreakable</i>, and it is the reason the arms race had to move somewhere else entirely.</p></div>
       </details>
+      <details class="edu"><summary>Vietnam, 1966 — when the cipher was never the problem</summary>
+        <div class="b"><p>American aircraft were being lost over North Vietnam at a rate nobody could explain. The enemy seemed to know mission plans in advance, down to the exact <b>time on target</b>. The obvious conclusion was that the codes had been broken, and Admiral U. S. Grant Sharp Jr. stood up a joint NSA and Defense Department team to find out how. It was codenamed <b>Purple Dragon</b>.</p>
+        <p>The codes were fine. The team found <b>50 separate non-secure communications</b> carrying specific operational detail — time-on-target information going out in clear between 75 minutes and 15 hours before missions. Nobody was decrypting anything. They were listening to the chatter around the cipher and watching the patterns: the refuelling requests, the schedules, the sudden bursts of routine traffic before a raid.</p>
+        <p>The team needed a name for what they were doing, and picked <b>operations security</b> — OPSEC — partly because the acronym got attention. It worked well enough that the Joint Chiefs mandated it across every US command, and in 1988 Reagan's NSDD-298 made it national policy.</p>
+        <p><b>Why this belongs on the one-time pad tab.</b> Everything above proves a mathematical statement: under its assumptions, this ciphertext tells an attacker nothing. Purple Dragon is the reminder that <i>the ciphertext is not the only thing you emit</i>. Shannon's proof is about the message. It says nothing about when you sent it, how often, to whom, or how much — and that is frequently enough.</p></div>
+      </details>
       <details class="edu"><summary>So why does nobody use it?</summary>
         <div class="b"><p>Three requirements, and all three are operational rather than mathematical:</p>
         <ol>
           <li><b>As long as everything you will ever send.</b> To exchange a gigabyte secretly you must first exchange a gigabyte secretly — which is the problem you were trying to solve.</li>
-          <li><b>Truly random.</b> Not a pseudorandom generator; anything with an internal state has structure, and structure is what the previous five tabs eat.</li>
+          <li><b>Truly random.</b> Not "looks random" — <i>generated</i> randomly. This is a property of the process, never of the string, and you cannot inspect a key and tell. Cloudflare's answer is a wall of about a hundred lava lamps in their San Francisco lobby, filmed continuously since 2017, with people walking past adding to the chaos rather than spoiling it; London gets a double pendulum, Lisbon fifty wave machines. That feeds a cryptographic generator as seed material. Note what that is <i>not</i>: they are not couriering lava-lamp pads to anybody. A good generator plus real entropy gives computational security from a short key — which is what modern encryption actually is, and a different thing from the pad's information-theoretic guarantee.</li>
           <li><b>Used exactly once.</b> Part 2 is what "once" means. Soviet cable traffic in the 1940s reused duplicated pad pages, and the Venona project read the results for decades.</li>
         </ol>
         <p>Pads are still used where those costs are acceptable — a diplomat carrying a sealed book, a hotline between two capitals. For everyone else the question became: can two strangers agree a key over a wire an enemy is listening to? That question stayed open until <b>1976</b>. <b>Tab ⑦.</b></p></div>
@@ -672,7 +688,14 @@
     <div class="card">
       <span class="era">⑦ Diffie &amp; Hellman 1976 · Rivest, Shamir &amp; Adleman 1977</span>
       <h2>Break RSA by factoring</h2>
-      <p class="hint">Every cipher so far assumed you had already shared a key somehow. That assumption is the unexamined hole in the whole page. Public-key cryptography closes it: publish a key that <b>locks</b>, keep the one that <b>unlocks</b>. RSA's security is one bet — that factoring a large number back into its two primes is hard. So break it the only way there is. 分解質因數就贏。</p>
+      <p class="hint">Every cipher so far assumed you had already shared a key somehow. That assumption is the unexamined hole in the whole page. Public-key cryptography closes it: publish a key that <b>locks</b>, keep the one that <b>unlocks</b>. RSA's security rests on one bet — that factoring a large number back into its two primes is hard. Recover the primes and you recover the private key. 分解質因數就攞到私鑰。</p>
+      <div class="tool" style="border-color:var(--danger);background:rgba(255,107,107,.07)">
+        <div class="tlabel" style="color:var(--danger)">Read this before you trust the exercise <span>— the encoding below is deliberately insecure</span></div>
+        <div class="tbody">This lab encodes <b>two letters per block</b>, so a block is one of only <b>27 × 27 = 729</b> values. RSA encryption is <b>deterministic</b>: the same block always produces the same ciphertext. Anyone holding the public key can therefore encrypt all 729 possibilities, build a lookup table, and read these messages <b>without factoring anything</b> — and a bigger N does not help even slightly. Press the button below and watch it happen.</div>
+        <div class="row"><button class="act" id="rsa_lookup">✦ Break it without factoring</button></div>
+        <div class="meter" id="rsa_lookmsg"></div>
+        <div class="tbody" style="margin-top:10px">Real RSA never encrypts a bare message like this. It pads the plaintext with randomness (OAEP), so the same message encrypts differently every time and no lookup table can exist — and in practice it encrypts a short symmetric key rather than your data. What the factoring exercise below genuinely teaches is <b>how the private key is recovered from a public modulus</b>. Treat it as that, not as "the only way in".</div>
+      </div>
 
       <label class="fld">Choose a key size · 揀一條</label>
       <div class="picker" id="rsa_picker"></div>
@@ -693,12 +716,18 @@
       <table class="scaletbl" id="rsa_scale"><tbody></tbody></table>
       <div class="meter" id="rsa_note"></div>
 
+      <details class="edu"><summary>Why an ordinary person ever needed this — PGP, 1991</summary>
+        <div class="b"><p>Public-key cryptography is usually introduced as a solution to a logistics problem, which makes it sound like plumbing. It was not experienced that way. In 1991 <b>Phil Zimmermann</b> released <b>Pretty Good Privacy</b> as free software, and it spread across the internet almost immediately — because for the first time, two people who had never met and shared no secret could exchange something an eavesdropper could not read.</p>
+        <p>The US government treated strong cryptography as a munition, and Zimmermann spent three years under criminal investigation for export. In April 1993 the Clinton administration proposed the <b>Clipper Chip</b>: encryption for everyone, with every chip's key split in half and held by two federal agencies, reconstructible on demand. The argument was that law enforcement had to keep up. The counter-argument was that a key someone else holds is not a key, and by 1996 Clipper was dead — helped by Matt Blaze demonstrating you could defeat its escrow while still using the chip.</p>
+        <p><b>Why this belongs here.</b> Every tab before this one assumed you and your recipient had already shared a secret. That assumption is fine for an admiral with a courier and useless for everyone else. What the next exercise picks apart is the machinery that removed it — and the reason people fought over that machinery for a decade is that removing it changed who gets to have a private conversation.</p></div>
+      </details>
       <details class="edu"><summary>How RSA works, in five lines</summary>
         <div class="b"><p>Pick two primes <span class="k">p</span> and <span class="k">q</span>. Publish <span class="k">N = p × q</span> and a public exponent <span class="k">e</span>. Encrypt with <span class="k">c = mᵉ mod N</span>. Anyone can do that. Decryption needs <span class="k">d</span>, the inverse of <span class="k">e</span> modulo <span class="k">(p−1)(q−1)</span> — and computing it requires knowing <b>p and q</b>, not just their product.</p>
-        <p>So the public key hands the world everything except the one thing that matters. Multiplying two 300-digit primes takes microseconds; splitting the result back apart is, as far as anyone knows, infeasible. <b>"As far as anyone knows"</b> is doing enormous work in that sentence, and it is the whole of the security.</p></div>
+        <p>So the public key hands the world everything except the one thing that matters. Multiplying two 300-digit primes takes microseconds; splitting the result back apart is, as far as anyone knows, infeasible. <b>"As far as anyone knows"</b> is doing enormous work in that sentence, and it is the whole of the security.</p>
+        <p>Two honest qualifications. Recovering <span class="k">d</span> lets you decrypt efficiently, but "only <span class="k">d</span> decrypts" is too strong — the red box above shows a message read with no private key at all. And while factoring is certainly <i>sufficient</i> to break RSA, it has never been proved that breaking RSA <i>requires</i> factoring. They are believed close; they are not known equal.</p></div>
       </details>
       <details class="edu"><summary>Kerckhoffs, taken to the limit</summary>
-        <div class="b"><p>Tab ① made the point that the algorithm must be public and only the key secret. RSA goes further: <b>half the key is published too.</b> N and e are printed on every certificate your browser accepts. The design is so confident in the difficulty of factoring that it hands the attacker the number to factor.</p>
+        <div class="b"><p>Tab ① made the point that the algorithm must be public and only the key secret. RSA goes further: <b>half the key is published too.</b> On every certificate that carries an RSA key, N and e are printed for anyone to read. The design is so confident in the difficulty of factoring that it hands the attacker the number to factor.</p>
         <p>That confidence has been repaid for fifty years by classical computers. It was never a proof, and in 1994 someone found a different kind of computer for which the bet does not hold. <b>Tab ⑧.</b></p></div>
       </details>
     </div>
@@ -735,7 +764,7 @@
       </details>
       <details class="edu"><summary>What this does and does not break — and when</summary>
         <div class="b"><p><b>Breaks outright:</b> RSA, Diffie–Hellman and elliptic curve cryptography. All three rest on factoring or discrete logarithms, and Shor dissolves both. That is essentially every public-key algorithm securing the internet today.</p>
-        <p><b>Does not break:</b> symmetric ciphers and hashes. The best known quantum attack there is Grover's, which gives only a square-root speedup — AES-256 retains around 128 bits of security, which is still far out of reach. The one-time pad in tab ⑥ remains perfectly secret regardless, since Shannon's proof is information-theoretic and does not care what machine you own.</p>
+        <p><b>Does not break:</b> symmetric ciphers. The best known quantum attack on a key search is Grover's, which gives a square-root speedup — AES-256 retains around 128 bits against it, still far out of reach. Hashes are less tidy: preimage search gets the same square-root treatment, while <i>collision</i> resistance is a different problem with its own bounds, so "halve the security" is not one rule covering all hash properties. The one-time pad in tab ⑥ remains perfectly secret regardless, because Shannon's proof is information-theoretic and does not care what machine you own.</p>
         <p><b>When:</b> no machine capable of running Shor at these sizes exists, and published expert forecasts range from about a decade to never. Treat any single figure — including ten years — as an opinion rather than a measurement. What is <i>not</i> an opinion is that the replacements are already standards: NIST published <b>ML-KEM</b> (FIPS 203), <b>ML-DSA</b> (FIPS 204) and <b>SLH-DSA</b> (FIPS 205) with effect from 14 August 2024, adding code-based <b>HQC</b> as a backup in March 2025, and guidance deprecates today's public-key algorithms by <b>2030</b> and disallows them by <b>2035</b>.</p></div>
       </details>
       <details class="edu"><summary>Why the deadline is already behind you</summary>
@@ -932,10 +961,11 @@ function makeBigrams(texts){
   const shiftEl=document.getElementById('e_shift'), keyWrap=document.getElementById('e_keywrap');
   const keyEl=document.getElementById('e_key'), step=document.getElementById('e_step'), disk=document.getElementById('disk');
   const dirEl=document.getElementById('e_dir'), padWrap=document.getElementById('e_padwrap'),
-    padEl=document.getElementById('e_pad'), rotorWrap=document.getElementById('e_rotorwrap'),
+    padEl=document.getElementById('e_pad'), padMsg=document.getElementById('e_padmsg'),
+    rotorWrap=document.getElementById('e_rotorwrap'),
     rotorEl=document.getElementById('e_rotor'), rsaWrap=document.getElementById('e_rsawrap'),
     rsaKeysEl=document.getElementById('e_rsakeys'), rsaInfo=document.getElementById('e_rsainfo');
-  let mode='caesar', shift=3, dir='enc', pad='', rsaKey=0;
+  let mode='caesar', shift=3, dir='enc', pad='', rsaKey=0, padShort=false;
   function ring(el,r){el.innerHTML='';for(let i=0;i<26;i++){const ang=i*360/26;
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('transform','rotate('+ang+') translate(0,'+(-r)+') rotate(180)');
@@ -947,16 +977,22 @@ function makeBigrams(texts){
 
   function freshPad(){
     const n=Math.max(letters(inp.value).length,1);
-    let s='';for(let i=0;i<n;i++)s+=L(Math.floor(Math.random()*26));
+    const buf=new Uint8Array(n);
+    crypto.getRandomValues(buf);                       // not Math.random: the lesson is about real entropy
+    let s='';for(let i=0;i<n;i++)s+=L(buf[i]%26);
     pad=s;padEl.textContent=pad;
   }
+  /* A pad must never emit plaintext. If the message has outgrown the pad, the
+     uncovered tail is withheld rather than passed through in clear. */
   function padApply(text,sign){
-    let i=0;
-    return text.replace(/[A-Za-z]/g,ch=>{
-      if(i>=pad.length){i++;return ch;}                 // a pad only covers what it covers
+    let i=0,short=false;
+    const s=text.replace(/[A-Za-z]/g,ch=>{
+      if(i>=pad.length){i++;short=true;return '·';}
       const k=pad.charCodeAt(i)-65;i++;
       return L(ch.toUpperCase().charCodeAt(0)-65+sign*k);
     });
+    padShort=short;
+    return s;
   }
   function rsaState(){
     const k=RSA_KEYS[rsaKey], N=k.p*k.q, phi=(k.p-1n)*(k.q-1n);
@@ -981,6 +1017,9 @@ function makeBigrams(texts){
     } else if(mode==='pad'){
       if(!pad)freshPad();
       out.textContent=padApply(inp.value,enc?1:-1);
+      padMsg.innerHTML=padShort
+        ? '<b class="bad">The message has outgrown the pad.</b> Uncovered letters are shown as · and withheld — a pad that runs out does not quietly stop encrypting. Press <b>Fresh pad</b>.'
+        : 'Generated with <span class="k">crypto.getRandomValues</span>. Real pads need a physical entropy source, and must never be used twice — see tab ⑥.';
     } else if(mode==='rotor'){
       const p=(rotorEl.value.toUpperCase().replace(/[^A-Z]/g,'')+'AAA').slice(0,3)
         .split('').map(c=>c.charCodeAt(0)-65);
@@ -1070,7 +1109,7 @@ function makeBigrams(texts){
   document.getElementById('otp_diff').textContent=diff;
 
   const cribIn=document.getElementById('otp_crib'), res=document.getElementById('otp_res'),
-    hits=document.getElementById('otp_hits');
+    hits=document.getElementById('otp_hits'), cribIn2=document.getElementById('otp_in2');
   document.getElementById('otp_drag').onclick=()=>{
     const w=A(cribIn.value);
     hits.innerHTML='';
@@ -1078,8 +1117,10 @@ function makeBigrams(texts){
     if(w.length>len){res.innerHTML='<b class="warn">Longer than the messages.</b>';return;}
     const rows=[];
     for(let i=0;i+w.length<=len;i++){
-      // diff = P1 − P2, so assuming the crib is P1 here gives P2 = crib − diff
-      const other=w.split('').map((ch,k)=>L(N(ch)-N(diff[i+k]))).join('');
+      // diff = P1 − P2. Crib in message 1 ⇒ P2 = crib − diff; crib in message 2 ⇒ P1 = crib + diff.
+      // The sign differs, so the direction has to be chosen, not assumed symmetric.
+      const sgn=cribIn2.checked?1:-1;
+      const other=w.split('').map((ch,k)=>L(N(ch)+sgn*N(diff[i+k]))).join('');
       rows.push({i,other,f:BG.fit(other)});
     }
     const best=rows.reduce((x,y)=>y.f>x.f?y:x);
@@ -1092,8 +1133,10 @@ function makeBigrams(texts){
       r.querySelector('.t').textContent=o.other.toLowerCase();
       r.onclick=()=>{
         [...hits.children].forEach(x=>x.classList.remove('on'));r.classList.add('on');
-        res.innerHTML='At position <b>'+o.i+'</b>: if message 1 reads <b>'+w.toLowerCase()+
-          '</b> there, then message 2 reads <b class="good">'+o.other.toLowerCase()+'</b> — and the reverse is equally true, because the two messages are symmetric. '+
+        const src=cribIn2.checked?2:1, dst=cribIn2.checked?1:2;
+        res.innerHTML='At position <b>'+o.i+'</b>: if message '+src+' reads <b>'+w.toLowerCase()+
+          '</b> there, then message '+dst+' reads <b class="good">'+o.other.toLowerCase()+'</b>. '+
+          'Switch the box above to test the same crib in the other message — the arithmetic flips sign, so it is a different guess, not the same one. '+
           (o.i===best.i?'This is the best-scoring position.':'');
       };
       hits.appendChild(r);
@@ -1163,6 +1206,24 @@ function makeBigrams(texts){
   });
   P.querySelector('button').classList.add('on');
 
+  /* The chosen-plaintext lookup. Shown, not hidden, because a simplification that
+     silently invalidates its own lesson is worse than no exercise at all. */
+  document.getElementById('rsa_lookup').onclick=()=>{
+    const k=current(), t0=performance.now();
+    const dict=new Map();
+    for(let a=0;a<=26;a++)for(let b=0;b<=26;b++){
+      const m=a*100+b;
+      dict.set(rsaModPow(BigInt(m),k.e,k.N).toString(),m);
+    }
+    const ch=x=>x===0?' ':String.fromCharCode(64+x);
+    const plain=k.ct.map(c=>{const m=dict.get(c.toString());
+      return m===undefined?'??':ch(Math.floor(m/100))+ch(m%100);}).join('').replace(/\s+$/,'');
+    const ms=Math.max(1,Math.round(performance.now()-t0));
+    document.getElementById('rsa_lookmsg').innerHTML=
+      'Encrypted all <b>'+dict.size+'</b> possible blocks with the <i>public</i> key and looked the ciphertext up: '+
+      '<b class="bad">“'+plain+'”</b> in '+ms+' ms, with N = '+k.N+' left completely intact. '+
+      'The message space was the weakness, not the modulus.';
+  };
   document.getElementById('rsa_factor').onclick=()=>{
     const k=current(), n=Number(k.N);
     const t0=performance.now();
@@ -1481,9 +1542,16 @@ function makeBigrams(texts){
     if(!klen){VACC.textContent='';return;}
     const key=colShift.map(s=>String.fromCharCode(65+s)).join('');
     const trueKey=c.key.toUpperCase();
-    let msg='Key so far <b>'+key+'</b> · letter-pair fit <b>'+BG.fit(plain)+'</b>';
-    if(klen===trueKey.length&&key===trueKey) msg+=' · <b class="good">solved — that is the key</b>';
-    else if(klen!==trueKey.length) msg+=' · <b class="warn">key length '+klen+' is not giving English</b>';
+    const fit=BG.fit(plain);
+    // Judge the PLAINTEXT, not the key length. KEYKEY decrypts exactly as KEY does,
+    // and a learner who finds a multiple of the period has not made a mistake.
+    const solved=onlyLetters(plain).toUpperCase()===onlyLetters(c.plain).toUpperCase();
+    let msg='Key so far <b>'+key+'</b> · letter-pair fit <b>'+fit+'</b>';
+    if(solved){
+      msg+=' · <b class="good">solved — this reads as English</b>';
+      if(key!==trueKey) msg+='<br>You used <b>'+key+'</b>, a repeat of the shorter key <b>'+trueKey+
+        '</b>. Any multiple of the true period decrypts identically, so this is a correct answer, not a lucky one.';
+    } else if(fit<55) msg+=' · <b class="warn">not English yet — try another length, or solve the columns</b>';
     VACC.innerHTML=msg;
   }
   function load(i){
@@ -1519,7 +1587,7 @@ function makeBigrams(texts){
     {id:'l', title:'Long',       note:'counts are steady here, and pairs finish the job'},
     {id:'m', title:'Medium',     note:'enough for pairs to work, with hand-fixing'},
     {id:'s', title:'Short',      note:'both tools struggle — you do the thinking'},
-    {id:'vs',title:'Very short', note:'nothing works. That is the lesson, not a bug'}
+    {id:'vs',title:'Very short', note:'these defeat every tool here — that is the lesson, not a bug'}
   ];
 
   // Each challenge: a plaintext + how it was enciphered (shift, or keyword substitution).
@@ -1540,7 +1608,7 @@ function makeBigrams(texts){
      plain:"In ninth century Baghdad a scholar named Al Kindi wrote the first known description of frequency analysis. His insight was simple and devastating. A substitution cipher hides which symbol stands for each letter, but it cannot hide how often that symbol appears. Count the symbols in a long enough message, compare them with the ordinary frequencies of the language, and the mapping unravels by itself.",
      spec:{keyword:"BAGHDAD"}},
     {band:'m', label:"Mary, Queen of Scots", note:"1586",
-     plain:"In the summer of fifteen eighty six Mary exchanged letters with Anthony Babington in a substitution cipher she believed unreadable. Thomas Phelippes, who served Francis Walsingham, broke it by counting its symbols. He then forged a postscript in the same cipher asking Mary to name her fellow conspirators. The decrypts were read aloud at her trial, and she was executed the following February.",
+     plain:"In the summer of fifteen eighty six Mary exchanged letters with Anthony Babington in a nomenclator she believed unreadable. Thomas Phelippes, who served Francis Walsingham, broke it by counting its symbols. He then forged a postscript onto her letter, asking Babington to name the gentlemen who would act with him. The decrypts were read aloud at her trial, and she was executed the following February.",
      spec:{keyword:"WALSINGHAM"}},
     {band:'m', label:"Kerckhoffs's Principle", note:"1883",
      plain:"Auguste Kerckhoffs argued that a military cipher must remain secure even when the enemy knows every detail of how it works. Only the key may be secret. Hiding the method buys nothing, because methods always leak, through captured equipment, through deserters, or through simple carelessness. Every cipher in serious use today follows his rule: the algorithm is published and attacked by the whole world, while the key stays private.",
