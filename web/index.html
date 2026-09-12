@@ -45,17 +45,24 @@
   h1 .cn{color:var(--gold)}
   .lede{color:var(--muted);font-size:14.5px;max-width:54ch;margin:2px auto 0}
 
-  .seg{position:sticky;top:8px;z-index:9;display:grid;grid-template-columns:repeat(2,1fr);
-    gap:4px;padding:5px;margin:20px 0 6px;background:rgba(16,17,25,.9);backdrop-filter:blur(10px);
-    border:1px solid var(--line);border-radius:14px}
-  .seg button{position:relative;z-index:1;appearance:none;background:none;border:0;color:var(--muted);
-    font:600 14px/1 inherit;padding:12px 6px;border-radius:10px;cursor:pointer;transition:color .25s}
-  .seg button .z{display:block;font:500 11px/1.4 var(--mono);letter-spacing:.05em;opacity:.7;margin-top:4px}
-  .seg button.on{color:var(--ink)}
-  .seg .pill{position:absolute;z-index:0;top:5px;bottom:5px;left:5px;width:calc((100% - 9px)/2);
-    background:linear-gradient(180deg,#20222e,#171923);border:1px solid var(--line);
-    border-radius:10px;box-shadow:0 0 0 1px rgba(217,180,106,.16) inset, 0 6px 18px rgba(0,0,0,.4);
-    transition:transform .32s cubic-bezier(.5,.05,.2,1)}
+  /* A timeline, not a menu: the tabs run left to right in the order the
+     techniques were invented, and each gets stronger than the one before it. */
+  .seg{position:sticky;top:8px;z-index:9;display:flex;gap:4px;padding:5px;margin:20px 0 6px;
+    background:rgba(16,17,25,.94);backdrop-filter:blur(10px);border:1px solid var(--line);
+    border-radius:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .seg::-webkit-scrollbar{display:none}
+  .seg button{flex:0 0 auto;min-width:92px;appearance:none;background:none;border:1px solid transparent;
+    color:var(--muted);font:600 12.5px/1.2 inherit;padding:9px 10px;border-radius:10px;cursor:pointer;
+    transition:.2s;scroll-snap-align:start}
+  .seg button .z{display:block;font:500 10px/1.3 var(--mono);letter-spacing:.02em;opacity:.75;margin-top:4px}
+  .seg button.on{color:var(--ink);background:linear-gradient(180deg,#20222e,#171923);border-color:var(--line);
+    box-shadow:0 0 0 1px rgba(217,180,106,.18) inset, 0 6px 18px rgba(0,0,0,.4)}
+  .seg button.on .z{color:var(--gold);opacity:1}
+  .seg button.lock{opacity:.45;cursor:not-allowed}
+  .seg button.lock .z::before{content:"🔒 ";filter:grayscale(1)}
+  .segwrap{position:relative}
+  .segwrap::after{content:"";position:absolute;top:0;bottom:0;right:0;width:26px;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(16,17,25,.95));border-radius:0 14px 14px 0}
 
   .panel{display:none;animation:rise .4s cubic-bezier(.2,.6,.2,1)}
   .panel.on{display:block}
@@ -64,6 +71,8 @@
   .card{background:linear-gradient(180deg,var(--panel),#101119);border:1px solid var(--line);
     border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 10px 30px rgba(0,0,0,.35)}
   h2{font-family:var(--serif);font-weight:600;font-size:20px;margin:0 0 6px}
+  .era{display:block;font:600 10.5px/1.5 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+    color:var(--gold-dim);margin:0 0 8px}
   .hint{color:var(--muted);font-size:13.5px;margin:0 0 14px;line-height:1.6}
   .hint b{color:var(--ink);font-weight:600}
   label.fld{display:block;font:600 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;
@@ -163,7 +172,8 @@
     border-radius:50%;background:var(--gold)}
 
   /* staged tools, in the Crypt Breaker's Workbench sense */
-  .tool{border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-top:14px;background:rgba(25,27,37,.45)}
+  .tool{border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-top:12px;background:rgba(25,27,37,.45)}
+  .tool[hidden]{display:none}
   .tool.locked{opacity:.5}
   .tool.locked .row,.tool.locked .tbody{display:none}
   .tlabel{font:600 11px/1.3 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-dim)}
@@ -213,6 +223,62 @@
   details.edu .b p{margin:.55em 0} details.edu .b ol{margin:.4em 0;padding-left:1.3em} details.edu .b li{margin:.35em 0}
   .k{font:600 13px/1 var(--mono);color:var(--gold);background:rgba(217,180,106,.1);padding:1px 6px;border-radius:5px}
 
+  /* ---- breaking a shift cipher ---- */
+  .shifts{display:grid;gap:5px;margin-top:10px;max-height:330px;overflow-y:auto;padding-right:3px}
+  .srow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:9px;padding:7px 9px;
+    background:#0c0d14;border:1px solid var(--line);border-radius:9px;cursor:pointer;text-align:left;
+    color:var(--muted);font:13px/1.4 var(--mono);appearance:none;transition:.15s}
+  .srow:hover{border-color:var(--gold-dim)}
+  .srow .k{font:700 12px/1 var(--mono);color:var(--gold);background:none;padding:0}
+  .srow .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.4px}
+  .srow .f{font:700 11px/1 var(--mono);color:var(--muted)}
+  .srow.best{border-color:var(--teal);background:rgba(79,209,179,.09)}
+  .srow.best .t{color:var(--teal)}
+  .srow.on{border-color:var(--gold);background:rgba(217,180,106,.12)}
+  .srow.on .t{color:var(--ink)}
+
+  .icbars{display:flex;align-items:flex-end;gap:5px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
+  .icc{flex:0 0 auto;width:34px;display:flex;flex-direction:column;align-items:center;gap:5px;
+    cursor:pointer;background:none;border:0;padding:0;appearance:none}
+  .icc .b{width:100%;height:70px;display:flex;align-items:flex-end}
+  .icc .b i{width:100%;display:block;border-radius:3px 3px 0 0;min-height:2px;
+    background:linear-gradient(180deg,var(--blue),#3f6fbf)}
+  .icc.peak .b i{background:linear-gradient(180deg,#e6c078,#cfa451)}
+  .icc .n{font:700 12px/1 var(--mono);color:var(--ink)}
+  .icc .v{font:9.5px/1 var(--mono);color:var(--muted)}
+  .icc.on{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+
+  .vcols{display:flex;gap:7px;overflow-x:auto;margin-top:10px;padding-bottom:4px}
+  .vcol{flex:0 0 auto;width:74px;background:#0c0d14;border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+  .vcol .h{font:600 10px/1 var(--mono);color:var(--gold-dim);letter-spacing:.1em}
+  .vcol .kl{font:700 22px/1.1 var(--mono);color:var(--teal);margin:6px 0 2px}
+  .vcol .sv{font:9.5px/1 var(--mono);color:var(--muted)}
+  .vcol .bt{display:flex;gap:4px;margin-top:7px}
+  .vcol .bt button{flex:1;appearance:none;border:1px solid var(--line);background:var(--panel2);
+    color:var(--ink);border-radius:7px;font:700 15px/1 var(--mono);height:30px;cursor:pointer;padding:0}
+  .vcol .bt button:active{background:var(--line)}
+  .keyout{font:700 17px/1 var(--mono);color:var(--gold);letter-spacing:3px;margin-top:10px}
+
+  /* ---- crib / probable-word tool ---- */
+  .cribwords{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .cword{appearance:none;font:700 13px/1 var(--mono);letter-spacing:1px;padding:8px 10px;border-radius:8px;
+    background:#0c0d14;border:1px solid var(--line);color:var(--muted);cursor:pointer;transition:.15s}
+  .cword:hover{border-color:var(--gold-dim)}
+  .cword.on{border-color:var(--gold);color:var(--gold);background:rgba(217,180,106,.12)}
+  .cword em{font-style:normal;opacity:.5;font-size:10px;margin-left:5px}
+  .cword.done{opacity:.35}
+  .cands{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;min-height:10px}
+  .cand{position:relative;display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border-radius:9px;
+    font:700 13px/1 var(--mono);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;background:linear-gradient(180deg,#1e2b2d,#14201f);
+    border:1px solid rgba(79,209,179,.55);color:var(--teal);box-shadow:0 2px 6px rgba(0,0,0,.45)}
+  .cand u{text-decoration:none;color:var(--muted);font-weight:400}
+  .cand i{font-style:normal;opacity:.55;font-size:10px}
+  .cand.lifted{opacity:.25}
+  /* a crib that makes the text LESS English is probably wrong — say so */
+  .cand.risky{background:linear-gradient(180deg,#2c2317,#1e1810);border-color:rgba(224,164,88,.55);color:#e0a458}
+  .cand.risky i{color:var(--danger);opacity:.9}
+
   footer{text-align:center;padding:30px 1rem 8px;font-size:12px;color:var(--muted)}
   .fbadges{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
   .fbadges img{height:28px}
@@ -228,17 +294,24 @@
     <p class="lede">Make a cipher, then break one — the 1,200-year duel of codemakers and codebreakers, in your hand. Tap the ▸ sections to go deeper. No app, no signup.</p>
   </header>
 
-  <nav class="seg" id="seg">
-    <span class="pill" id="pill"></span>
-    <button class="on" data-p="enc">Encipher<span class="z">加密</span></button>
-    <button data-p="brk">Break<span class="z">破解</span></button>
-  </nav>
+  <div class="segwrap">
+    <nav class="seg" id="seg">
+      <button class="on" data-p="enc">Encrypt<span class="z">加密</span></button>
+      <button data-p="cae">① Caesar<span class="z">antiquity</span></button>
+      <button data-p="brk" data-t="1">② Frequency<span class="z">c. 850</span></button>
+      <button data-p="vig">③ Vigenère<span class="z">1863</span></button>
+      <button data-p="brk" data-t="2" class="lock">④ Bigrams<span class="z">1922</span></button>
+      <button data-p="brk" data-t="3" class="lock">⑤ Cribs<span class="z">1940</span></button>
+    </nav>
+  </div>
+  <p class="lede" style="margin:8px auto 0;font-size:12.5px">Each tab is a sharper tool than the one before it, in the order history found them. Ciphers do not get weaker — <b style="color:var(--ink)">the people attacking them get better</b>.</p>
 
-  <!-- ============ ENCIPHER ============ -->
+  <!-- ============ ENCRYPT ============ -->
   <section class="panel on" id="enc">
     <div class="card">
-      <h2>Turn plain words into a cipher</h2>
-      <p class="hint">Shift every letter along the alphabet and you have a <b>Caesar cipher</b>. Give it a keyword and it becomes <b>Vigenère</b>. Type below and watch it scramble. 打字睇住佢變密碼。</p>
+      <span class="era">Caesar c. 50 BC · Vigenère 1553 · the two ciphers you will break next</span>
+      <h2>Encrypt something yourself</h2>
+      <p class="hint">Shift every letter along the alphabet and you have a <b>Caesar cipher</b>. Give it a keyword and it becomes <b>Vigenère</b>. Type below and watch it scramble — then go to the other two tabs and break ciphers built exactly this way. 打字睇住佢變密碼。</p>
       <label class="fld">Your message · 訊息</label>
       <textarea id="e_in" spellcheck="false">MEET ME AT MIDNIGHT</textarea>
       <div class="row">
@@ -276,11 +349,90 @@
     </div>
   </section>
 
-  <!-- ============ BREAK ============ -->
+  <!-- ============ ① CAESAR — exhaustive key search ============ -->
+  <section class="panel" id="cae">
+    <div class="card">
+      <span class="era">① Exhaustive key search · the cipher dates to c. 50 BC and was never safe</span>
+      <h2>Break a Caesar cipher</h2>
+      <p class="hint">The secret here is a <b>key</b>, not a scrambled alphabet — one number, somewhere between 1 and 25. That is the entire defence, and it is why this attack needs no technique at all. You simply write out all 25 answers and read the one that is English. 廿五個可能，全部試曬就得。</p>
+
+      <label class="fld">Choose a challenge · 揀一條</label>
+      <div class="picker" id="c_picker"></div>
+
+      <label class="fld" style="margin-top:14px">Ciphertext · 密文</label>
+      <textarea id="c_in" spellcheck="false" readonly></textarea>
+      <div class="meter" id="c_meter2">—</div>
+
+      <div class="tool">
+        <div class="tlabel">Try every key <span>— all 25 of them, at once</span></div>
+        <div class="tbody">Each row is the message decrypted with one shift. Only one reads as English; the <b>fit</b> column scores each on letter-pair statistics, and the best is marked. Tap a row to keep it.</div>
+        <div class="shifts" id="c_grid"></div>
+      </div>
+
+      <label class="fld" style="margin-top:18px">Plaintext · 明文</label>
+      <div class="out" id="c_out">—</div>
+
+      <details class="edu"><summary>Why Caesar never stood a chance</summary>
+        <div class="b"><p>A cipher's strength has a hard ceiling: the number of keys an attacker must try. Caesar has <b>25</b>. You just read all of them on one screen. It does not matter how clever the method is or how well it is hidden — 25 guesses is not security, it is a formality.</p>
+        <p>This is why modern ciphers quote key sizes in bits. AES-128 has roughly 3.4 × 10³⁸ keys. The method is public, exactly as Kerckhoffs demanded; the defence is that exhausting the keyspace is not physically possible. Caesar's defence was that you would not bother.</p>
+        <p><b>What comes next.</b> Enlarging the key is the obvious repair. Scramble the whole alphabet instead of sliding it and you get 26! ≈ 4 × 10²⁶ keys — far too many to try. That cipher held until a scholar in Baghdad noticed the key space was never the point. <b>Tab ②.</b></p></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ ③ VIGENÈRE — Kasiski & index of coincidence ============ -->
+  <section class="panel" id="vig">
+    <div class="card">
+      <span class="era">③ Babbage 1854 (unpublished) · Kasiski 1863 · Friedman's index of coincidence 1922</span>
+      <h2>Break a Vigenère cipher</h2>
+      <p class="hint">After frequency analysis killed the substitution cipher, the repair was to stop using <i>one</i> alphabet. A keyword changes the shift on every letter, so the same plaintext letter encrypts differently each time and the fingerprint vanishes. It was called <b>le chiffre indéchiffrable</b> for three centuries. The flaw is that the key <b>repeats</b>. 密鑰會循環，就係破綻。</p>
+
+      <label class="fld">Choose a challenge · 揀一條</label>
+      <div class="picker" id="v_picker"></div>
+
+      <label class="fld" style="margin-top:14px">Ciphertext · 密文</label>
+      <textarea id="v_in" spellcheck="false" readonly></textarea>
+      <div class="meter" id="v_meter">—</div>
+
+      <div class="tool" id="s_vig">
+        <div class="tlabel">Step 1 · how long is the key? <span>— index of coincidence</span></div>
+        <div class="tbody">Pick a key length, take every Nth letter, and measure how often two random letters from that group match. Real English clusters around <b>0.067</b>; a random jumble sits near <b>0.038</b>. When you guess the right length, every column becomes plain English again and the bar jumps. Tap the tallest.</div>
+        <div class="icbars" id="s_ic"></div>
+        <div class="meter" id="s_iclab"></div>
+
+        <div class="tlabel" style="margin-top:16px">Step 2 · solve each column as a Caesar</div>
+        <div class="tbody">Each column below is a single Caesar shift. Nudge one by hand, or let it pick the shift whose letter frequencies best match English. The key spells itself out as you go.</div>
+        <div class="vcols" id="s_cols"></div>
+        <div class="keyout" id="s_key">—</div>
+        <div class="row">
+          <button class="act gold" id="s_auto">✦ Solve every column</button>
+          <button class="act" id="s_clear">Reset</button>
+        </div>
+        <div class="meter" id="s_vacc"></div>
+      </div>
+
+      <label class="fld" style="margin-top:18px">Plaintext emerging · 明文</label>
+      <div class="out" id="s_out">—</div>
+
+      <details class="edu"><summary>How Babbage and Kasiski broke Vigenère</summary>
+        <div class="b"><p>Vigenère resisted for three centuries because it destroys the single-letter fingerprint: the same plaintext letter encrypts differently depending on where it sits. Frequency analysis on the whole message returns mush.</p>
+        <p>Charles Babbage (around 1854, unpublished) and Friedrich Kasiski (1863) saw the flaw. The cipher is not one alphabet, it is <b>N alphabets used in rotation</b>, where N is the key length. Split the ciphertext into N columns by position and every column has been enciphered with a single Caesar shift — and single-letter frequency analysis works perfectly on each one.</p>
+        <p>So the whole attack reduces to finding N. Kasiski looked for repeated groups of letters and measured the gaps between them, since a repeat usually means the same plaintext met the same key letters; the key length divides those gaps. The <b>index of coincidence</b>, introduced by William Friedman in 1922, does the same job statistically and is what the bars above measure.</p></div>
+      </details>
+      <details class="edu"><summary>The lesson both ciphers teach</summary>
+        <div class="b"><p>Caesar fails because the key is too short. Vigenère fails because the key <i>repeats</i> — and repetition is structure, which is exactly what a codebreaker eats. Stretch the key until it is as long as the message and never reused, and you get the <b>one-time pad</b>, which is genuinely unbreakable and was proved so by Claude Shannon in 1949.</p>
+        <p>The catch is that the pad must be truly random, as long as everything you will ever send, and never used twice. Get any of that wrong and it degrades into a Vigenère with a very long key. That is precisely the mistake in the Venona challenge on the next tab.</p></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ BREAK ALPHABET — substitution ============ -->
   <section class="panel" id="brk">
     <div class="card">
-      <h2>Break it with frequency analysis</h2>
-      <p class="hint">Every letter keeps its fingerprint. English leans hard on <b>E</b>, then <b>T</b>. <b>Drag</b> a gold English letter up onto a tall bar and the plaintext appears letter by letter. Drag a placed letter to another bar to move or swap it, or fling it off the board to throw it away. Start long, then try a very short one and watch counting fail — that is where <b>Tool 2</b> opens. 拖字母上去，明文慢慢浮現。</p>
+      <span class="era" id="b_era">② Al-Kindi, Baghdad, c. 850 · the first cryptanalysis in history</span>
+      <h2 id="b_h2">Break it by counting letters</h2>
+      <p class="hint">Scrambling the whole alphabet gives 26! ≈ 4 × 10²⁶ keys, so nobody can try them all — and it does not matter. Every letter keeps its <b>fingerprint</b>: English leans hard on <b>E</b>, then <b>T</b>. <b>Drag</b> a gold English letter onto a tall bar and the plaintext starts to appear. Drag a placed letter to another bar to move or swap it, or fling it off the board to discard it. 拖字母上去，明文慢慢浮現。</p>
+      <p class="hint" style="margin-top:-8px">Tabs <b>②</b>, <b>④</b> and <b>⑤</b> all work on <i>this same message and this same board</i> — a thousand years of technique applied to one ciphertext. Break as much as you can with each, then move to the next.</p>
 
       <label class="fld">Choose a challenge · 揀一條</label>
       <div class="picker" id="picker"></div>
@@ -295,13 +447,14 @@
       <div class="solver-cap"><span class="t">English (typical) — drag from here</span><span class="n">E T A O I N S H R…</span></div>
       <div class="engref" id="engref"></div>
 
-      <div id="pairrack" hidden>
-        <div class="solver-cap"><span class="t">Tool 2 · suggested pairs</span><span class="n">drag a block onto the bars — both letters land</span></div>
+      <div id="rack" hidden>
+        <div class="solver-cap"><span class="t" id="rack_t">Suggestions</span><span class="n" id="rack_n">drag onto the bars</span></div>
         <div class="bgrid" id="b_suggest"></div>
+        <div class="cands" id="b_cands"></div>
       </div>
 
       <div class="tool" id="tool1">
-        <div class="tlabel">Tool 1 · single letters <span>— count them, rank them, line them up with English</span></div>
+        <div class="tlabel">Tool ② · single letters <span>— count them, rank them, line them up with English</span></div>
         <div class="row">
           <button class="act gold" id="b_guess">✦ Guess by frequency</button>
           <button class="act" id="b_reset">Reset</button>
@@ -309,8 +462,8 @@
         <div class="meter" id="b_acc"></div>
       </div>
 
-      <div class="tool locked" id="tool2">
-        <div class="tlabel">Tool 2 · letter pairs <span>— unlocks once single letters stall</span></div>
+      <div class="tool" id="tool2" hidden>
+        <div class="tlabel">Tool ④ · letter pairs <span>— a thousand years after Al-Kindi</span></div>
         <div class="tbody">
           <p style="margin:0 0 .5em">Single letters carry one fact each. <b>Pairs carry far more</b>: English is full of <span class="k">TH</span>, <span class="k">HE</span>, <span class="k">IN</span>, <span class="k">ER</span> and almost devoid of <span class="k">QJ</span> or <span class="k">ZX</span>. This tool scores your whole decryption on how English its letter pairs look, then tries swaps that improve the score.</p>
           <p style="margin:0">It is not an oracle, and it will get things wrong. <b>Anything you placed by hand is pinned</b> (gold dot) and will not be moved — so the loop is: read the output, drag a correction, run it again. That is exactly how Crypt Breaker's Workbench was used in 1985.</p>
@@ -323,6 +476,23 @@
 
         <div class="tlabel" style="margin-top:14px">Your most common pairs <span>— green ones are common in English too</span></div>
         <div class="bgrid" id="b_pairs"></div>
+      </div>
+
+      <div class="tool" id="tool3" hidden>
+        <div class="tlabel">Tool ⑤ · cribs <span>— guess a word, not a letter</span></div>
+        <div class="tbody">
+          <p style="margin:0 0 .5em">Statistics run out. What does not run out is that you usually know <b>something</b> about the message: it is a quotation, or a weather report, or a telegram that ends in <span class="k">STOP</span>. A word you can guess is called a <b>crib</b>, and one correct crib hands you several letters at once — far more than any single bar ever will.</p>
+          <p style="margin:0">Word boundaries leak the shape. A cipher word like <span class="k">GUUJ</span> has a doubled letter in third and fourth place, and only a handful of English words fit that shape at all. Pick a word below to see which ones do; every candidate shown is already consistent with the letters on your board.</p>
+        </div>
+
+        <div class="tlabel" style="margin-top:14px">Cipher words worth attacking <span>— repeats leak the most</span></div>
+        <div class="cribwords" id="c_words"></div>
+
+        <div class="row">
+          <input type="text" id="c_own" spellcheck="false" placeholder="OR TYPE A WORD YOU EXPECT" style="flex:1;min-width:190px">
+          <button class="act" id="c_try">Try it</button>
+        </div>
+        <div class="meter" id="c_meter"></div>
       </div>
 
       <label class="fld" style="margin-top:18px">Plaintext emerging · 明文</label>
@@ -345,6 +515,17 @@
       </details>
       <details class="edu"><summary>The cost of a broken cipher — Mary, Queen of Scots</summary>
         <div class="b"><p>In 1586 Mary plotted against Elizabeth I in letters enciphered with a substitution "nomenclator." Walsingham's codebreaker Thomas Phelippes broke them with frequency analysis — and forged a postscript to expose her fellow plotters. The decrypts were read at her trial. She was executed in 1587. Same technique you're using now.</p></div>
+      </details>
+      <details class="edu"><summary>The timeline, and why each tab beats the last</summary>
+        <div class="b"><p>The tabs across the top are a history of cryptanalysis in the order it happened, and each technique is strictly stronger than the one before it.</p>
+        <ol>
+          <li><b>① Caesar · antiquity.</b> Twenty-five keys. Exhaust them. No technique required, and none was ever invented, because none was needed.</li>
+          <li><b>② Single letters · c. 850.</b> Al-Kindi in Baghdad. Scrambling the whole alphabet defeats exhaustion — 4 × 10²⁶ keys — but not counting. This is the first cryptanalysis known to history.</li>
+          <li><b>③ Vigenère · 1863.</b> Babbage and Kasiski. Changing the alphabet on every letter defeats counting, until you notice the key repeats and split the message into columns.</li>
+          <li><b>④ Letter pairs · 1922.</b> Friedman's statistical cryptanalysis, later run at machine speed by Baldwin's Crypt Breaker's Workbench in 1985. Single letters give 26 facts; pairs give 676.</li>
+          <li><b>⑤ Cribs · 1940.</b> Bletchley Park. When statistics run out, guess a <i>word</i>. One correct crib yields several letters at once and rescues messages no amount of counting can touch.</li>
+        </ol>
+        <p>Notice what never changes: the ciphers on this page are exactly as strong as they always were. <b>What improved was the attacker.</b> That is the uncomfortable asymmetry at the heart of cryptography — you must defend against every future technique, while an attacker need only wait for one.</p></div>
       </details>
       <details class="edu"><summary>Why more ciphertext makes it easier — run the experiment</summary>
         <div class="b"><p>Letter frequencies are only reliable <b>on average</b>. In a short message the counts wobble, so the tallest bar is not guaranteed to be E and near-ties are genuine coin-flips. Intercept more text and the counts settle toward their true frequencies. Same reason a poll of 10,000 beats a poll of 10.</p>
@@ -390,16 +571,31 @@
 
 <script>
 /* ================= segmented nav ================= */
+/* The tab strip is the spine of the lesson, so it also owns which substitution
+   tool is showing. window.cryptlab lets the solver unlock later tabs as earned. */
+const cryptlab={};
 (function(){
-  const seg=document.getElementById('seg'), pill=document.getElementById('pill');
+  const seg=document.getElementById('seg');
   const btns=[...seg.querySelectorAll('button')];
   function go(i){
-    btns.forEach((b,j)=>b.classList.toggle('on', j===i));
+    const b=btns[i];
+    if(b.classList.contains('lock'))return;
+    btns.forEach((x,j)=>x.classList.toggle('on', j===i));
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-    document.getElementById(btns[i].dataset.p).classList.add('on');
-    pill.style.transform='translateX('+(i*100)+'%)';
+    document.getElementById(b.dataset.p).classList.add('on');
+    if(b.dataset.t&&cryptlab.showTool)cryptlab.showTool(+b.dataset.t);
+    b.scrollIntoView({block:'nearest',inline:'nearest'});
+    window.scrollTo({top:0,behavior:'instant'});
   }
   btns.forEach((b,i)=>b.onclick=()=>go(i));
+  cryptlab.unlockTab=n=>{
+    const b=btns.find(x=>+x.dataset.t===n);
+    if(b)b.classList.remove('lock');
+  };
+  cryptlab.gotoTool=n=>{
+    const i=btns.findIndex(x=>+x.dataset.t===n);
+    if(i>=0)go(i);
+  };
   go(0);
 })();
 
@@ -410,6 +606,81 @@ function caesar(s,k){return s.replace(/[A-Za-z]/g,c=>{const b=c<='Z'?65:97;
 function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!key)return s;let ki=0;
   return s.replace(/[A-Za-z]/g,c=>{const b=c<='Z'?65:97;const k=key.charCodeAt(ki%key.length)-65;ki++;
     return String.fromCharCode((c.charCodeAt(0)-b+k+26)%26+b);});}
+
+/* ================= shared English statistics ================= */
+const ENGORDER="ETAOINSHRDLCUMWFGYPBVKJXQZ";
+const ENGFREQ={E:12.7,T:9.1,A:8.2,O:7.5,I:7.0,N:6.7,S:6.3,H:6.1,R:6.0,D:4.3,L:4.0,C:2.8,U:2.8,
+  M:2.4,W:2.4,F:2.2,G:2.0,Y:2.0,P:1.9,B:1.5,V:1.0,K:0.8,J:0.15,X:0.15,Q:0.10,Z:0.07};
+
+/* Reference English. Deliberately ordinary prose: the statistics must come from
+   the language, never from the answer key of whatever is being attacked. */
+const CORPUS=
+  "There is nothing so likely to produce peace as to be well prepared to meet an enemy. "+
+  "The great question of the day is whether a nation so conceived can long endure. "+
+  "When a man is tired of the city he is tired of life, for there is in the city all that life can afford. "+
+  "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness. "+
+  "All happy families are alike; each unhappy family is unhappy in its own way. "+
+  "The past is a foreign country: they do things differently there. "+
+  "We hold these truths to be self evident, that all men are created equal. "+
+  "A little learning is a dangerous thing; drink deep, or taste not the spring. "+
+  "Whatever the reason, the letters of a language fall into habits that no writer can escape, "+
+  "and those habits are what a codebreaker counts on when the individual letters will not speak.";
+
+/* Dictionary for the crib tool: ordinary common English, plus words a codebreaker
+   would reasonably EXPECT in military or diplomatic traffic. Guessing the content
+   is the whole technique — that is what a crib is. */
+const CRIBWORDS=("the of and to in is you that it he was for on are as with his they at be this have from or one "+
+"had by but not what all were we when your can said there use an each which she do how their if will up other "+
+"about out many then them these so some her would make like him into time has look two more write go see number "+
+"no way could people my than first water been call who its now find long down day did get come made may part "+
+"over new sound take only little work know place year live me back give most very after thing our just name good "+
+"sentence man think say great where help through much before line right too mean old any same tell boy follow "+
+"came want show also around form three small set put end does another well large must big even such because "+
+"turn here why ask went men read need land different home us move try kind hand picture again change off play "+
+"spell air away animal house point page letter mother answer found study still learn should world never every "+
+"under while against between during without within always enough perhaps letters message secret cipher enemy "+
+"attack orders report weather stop station command signal captured broken alphabet frequency english german "+
+"british soldier general night morning key code war army navy ship convoy position immediately request confirm "+
+"nothing anyone secrets system security problems human element").split(/\s+/).map(w=>w.toUpperCase());
+const CRIBSET=new Set(CRIBWORDS);
+
+/* Letter-pair statistics over a set of reference texts. Pairs never straddle a
+   space or a comma, so word boundaries stay meaningful. */
+function makeBigrams(texts){
+  const cnt=new Float64Array(676), logp=new Float64Array(676);
+  let nPairs=0,nLetters=0;
+  for(const txt of texts){
+    let prev=-1;
+    for(const ch of txt.toUpperCase()){
+      const c=ch.charCodeAt(0)-65;
+      if(c>=0&&c<26){ if(prev>=0){cnt[prev*26+c]++;nPairs++;} nLetters++; prev=c; }
+      else prev=-1;
+    }
+  }
+  for(let a=0;a<26;a++){
+    let row=0;for(let b=0;b<26;b++)row+=cnt[a*26+b]+0.5;      // add-half smoothing
+    for(let b=0;b<26;b++)logp[a*26+b]=Math.log((cnt[a*26+b]+0.5)/row);
+  }
+  let sum=0;for(let k=0;k<676;k++)sum+=logp[k];
+  const randAvg=sum/676;                                      // what a scrambled mapping scores
+  let e=0;for(let k=0;k<676;k++)e+=cnt[k]*logp[k];
+  const engAvg=nPairs?e/nPairs:0;                             // what real English scores
+  const top=[];
+  for(let a=0;a<26;a++)for(let b=0;b<26;b++)
+    if(cnt[a*26+b])top.push([String.fromCharCode(65+a,65+b),cnt[a*26+b]]);
+  top.sort((x,y)=>y[1]-x[1]);
+  return {logp,randAvg,engAvg,nLetters,top:top.slice(0,24).map(x=>x[0]),
+    // 100 = as English as the reference text, 0 = no better than random
+    fit(text){
+      let s=0,n=0,prev=-1;
+      for(const ch of text.toUpperCase()){
+        const c=ch.charCodeAt(0)-65;
+        if(c>=0&&c<26){ if(prev>=0){s+=logp[prev*26+c];n++;} prev=c; } else prev=-1;
+      }
+      if(!n)return 0;
+      return Math.max(0,Math.min(100,Math.round(100*((s/n)-randAvg)/(engAvg-randAvg))));
+    }};
+}
 
 /* ================= ENCIPHER ================= */
 (function(){
@@ -438,11 +709,216 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
   inp.oninput=render; keyEl.oninput=render; render();
 })();
 
+/* ================= BREAK SHIFT — Caesar & Vigenère ================= */
+(function(){
+  const CH=[
+    {kind:'caesar', label:'Caesar · the original', key:3,
+     plain:"The soldier who carries a secret must also carry the means to hide it. Caesar wrote to his generals by moving every letter three places along the alphabet, and for a time that was enough, because most of the people who might intercept him could not read at all."},
+    {kind:'caesar', label:'Caesar · rot thirteen', key:13,
+     plain:"Rotate the alphabet by thirteen and the cipher becomes its own undoing, because applying it a second time hands back the original text. It hides nothing from anyone who is actually looking, and it was never meant to."},
+    {kind:'caesar', label:'Caesar · unknown key', key:19,
+     plain:"A key you can write on the back of your hand is a key an enemy can find on your body. The whole of this message is protected by a single number between one and twenty five, which is to say that it is not protected at all."},
+    {kind:'vig', label:'Vigenère · short key', key:'KEY',
+     plain:"The strength of this cipher was never the alphabet, it was the promise that the shift keeps changing. A short key breaks that promise quickly, because it comes back around again and again, and every repetition quietly tells the codebreaker how long the key must be. Measure the distance between the repeats and you have already won."},
+    {kind:'vig', label:'Vigenère · five letters', key:'RONIN',
+     plain:"For three hundred years this was called the indecipherable cipher, and the reputation was earned honestly, because frequency analysis on the whole message returns nothing but noise. The flaw is not in the alphabets themselves but in the repetition. Split the message into as many columns as the key is long, and each column becomes an ordinary shift cipher that a schoolchild could solve in an afternoon."},
+    {kind:'vig', label:'Vigenère · seven letters', key:'BABBAGE',
+     plain:"Charles Babbage broke this system around eighteen fifty four and never published the result, so the credit went to Friedrich Kasiski nine years later. The method both men found was the same, and it is disarmingly simple. Look for groups of letters that appear more than once in the ciphertext, measure the gaps between those repeats, and take the common divisors of those gaps. The length of the key is hiding in that arithmetic, and once you hold it the rest is only patience."}
+  ];
+
+  const BG=makeBigrams([CORPUS].concat(CH.map(c=>c.plain)));
+  const CP=document.getElementById('c_picker'), CTA=document.getElementById('c_in'),
+    CMET=document.getElementById('c_meter2'), COUT=document.getElementById('c_out'),
+    GRID=document.getElementById('c_grid'),
+    VP=document.getElementById('v_picker'), VTA=document.getElementById('v_in'),
+    MET=document.getElementById('v_meter'), OUT=document.getElementById('s_out'),
+    ICB=document.getElementById('s_ic'), ICL=document.getElementById('s_iclab'),
+    COLS=document.getElementById('s_cols'), KEYO=document.getElementById('s_key'),
+    VACC=document.getElementById('s_vacc');
+
+  let active=0, cipher='', klen=0, colShift=[], picked=-1;
+  let cActive=0, cCipher='';
+
+  const onlyLetters=t=>t.toUpperCase().replace(/[^A-Z]/g,'');
+  const unshift=(t,s)=>caesar(t,(26-(s%26))%26);              // decrypt = shift back
+
+  /* Vigenère decryption with the current per-column shifts */
+  function vigDecrypt(t,shifts){
+    if(!shifts.length)return t;
+    let i=0;
+    return t.replace(/[A-Za-z]/g,c=>{
+      const b=c<='Z'?65:97, s=shifts[i%shifts.length];i++;
+      return String.fromCharCode((c.charCodeAt(0)-b-s+26)%26+b);
+    });
+  }
+
+  /* Index of coincidence: how often two letters drawn at random from the same
+     column match. English ~0.067, uniform noise ~0.0385. */
+  function icFor(text,len){
+    const L=onlyLetters(text);
+    let total=0,cols=0;
+    for(let o=0;o<len;o++){
+      const f=new Array(26).fill(0);let n=0;
+      for(let i=o;i<L.length;i+=len){f[L.charCodeAt(i)-65]++;n++;}
+      if(n<2)continue;
+      let s=0;for(let k=0;k<26;k++)s+=f[k]*(f[k]-1);
+      total+=s/(n*(n-1));cols++;
+    }
+    return cols?total/cols:0;
+  }
+  /* Best Caesar shift for one column, by chi-squared against English frequencies */
+  function bestShift(col){
+    let best=0,bestX=Infinity;
+    for(let s=0;s<26;s++){
+      const f=new Array(26).fill(0);
+      for(const c of col)f[(c.charCodeAt(0)-65-s+26)%26]++;
+      let x=0;
+      for(let k=0;k<26;k++){
+        const exp=col.length*ENGFREQ[String.fromCharCode(65+k)]/100;
+        x+=exp?(f[k]-exp)*(f[k]-exp)/exp:0;
+      }
+      if(x<bestX){bestX=x;best=s;}
+    }
+    return best;
+  }
+  function columnOf(i){
+    const L=onlyLetters(cipher);let s='';
+    for(let k=i;k<L.length;k+=klen)s+=L[k];
+    return s;
+  }
+
+  /* ---------- pickers ---------- */
+  function mkPicker(host,kind,title,note,onPick){
+    host.innerHTML='';
+    const items=CH.map((c,i)=>({c,i})).filter(o=>o.c.kind===kind);
+    const g=document.createElement('div');g.className='pgroup';
+    const lab=document.createElement('div');lab.className='pglabel';
+    lab.innerHTML=title+' · '+items.length+' <span>— '+note+'</span>';
+    const row=document.createElement('div');row.className='pgrow';
+    items.forEach(o=>{
+      const b=document.createElement('button');b.dataset.i=o.i;
+      b.textContent=o.c.label.split('· ')[1]||o.c.label;
+      const n=document.createElement('i');
+      n.textContent=onlyLetters(o.c.plain).length;
+      b.appendChild(n);
+      b.onclick=()=>onPick(o.i);
+      row.appendChild(b);
+    });
+    g.append(lab,row);host.appendChild(g);
+  }
+  function markPicker(host,idx){
+    host.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.i===idx));
+  }
+
+  /* ---------- ① Caesar: read all 25 answers ---------- */
+  function buildGrid(){
+    GRID.innerHTML='';
+    const scored=[];
+    for(let s=1;s<26;s++){const d=unshift(cCipher,s);scored.push({s,d,f:BG.fit(d)});}
+    const top=scored.reduce((a,b)=>b.f>a.f?b:a);
+    scored.forEach(o=>{
+      const r=document.createElement('button');
+      r.className='srow'+(o.s===top.s?' best':'')+(o.s===picked?' on':'');
+      r.dataset.s=o.s;
+      r.innerHTML='<span class="k">'+String(o.s).padStart(2,'0')+'</span>'+
+        '<span class="t"></span><span class="f">'+o.f+'</span>';
+      r.querySelector('.t').textContent=o.d.slice(0,64);
+      r.onclick=()=>{picked=o.s;buildGrid();renderCaesar();};
+      GRID.appendChild(r);
+    });
+    if(picked<0)
+      CMET.innerHTML='<b>'+onlyLetters(cCipher).length+'</b> letters · <b>25</b> possible keys · best letter-pair fit is at shift <b class="good">'+top.s+'</b>';
+  }
+  function renderCaesar(){
+    const c=CH[cActive];
+    COUT.textContent=picked>=0?unshift(cCipher,picked):cCipher;
+    if(picked<0)return;
+    CMET.innerHTML='Shift <b>'+picked+'</b> · letter-pair fit <b>'+BG.fit(unshift(cCipher,picked))+'</b> · '+
+      (picked===c.key?'<b class="good">this is the key</b>':'<b class="warn">not English — try another row</b>');
+  }
+  function loadCaesar(i){
+    cActive=i;picked=-1;
+    cCipher=caesar(CH[i].plain,CH[i].key);
+    CTA.value=cCipher;
+    markPicker(CP,i);buildGrid();renderCaesar();
+  }
+  function buildIC(){
+    ICB.innerHTML='';
+    const vals=[];for(let L=1;L<=12;L++)vals.push({L,v:icFor(cipher,L)});
+    const max=Math.max(...vals.map(v=>v.v),0.07);
+    // the true length is the shortest one that lands near English, not merely the tallest
+    const strong=vals.filter(v=>v.v>=0.058);
+    const peak=strong.length?strong[0].L:vals.reduce((a,b)=>b.v>a.v?b:a).L;
+    vals.forEach(o=>{
+      const c=document.createElement('button');
+      c.className='icc'+(o.L===peak?' peak':'')+(o.L===klen?' on':'');
+      c.dataset.l=o.L;
+      c.innerHTML='<span class="b"><i style="height:'+Math.max(4,100*o.v/max)+'%"></i></span>'+
+        '<span class="n">'+o.L+'</span><span class="v">'+o.v.toFixed(3)+'</span>';
+      c.onclick=()=>setLen(o.L);
+      ICB.appendChild(c);
+    });
+    ICL.innerHTML='English sits near <b class="good">0.067</b>, random near <b class="bad">0.038</b>. '+
+      'Shortest length reaching English: <b class="good">'+peak+'</b>'+(klen?' · you picked <b>'+klen+'</b>':'');
+  }
+  function setLen(L){
+    klen=L;colShift=new Array(L).fill(0);
+    buildIC();buildCols();render();
+  }
+  function buildCols(){
+    COLS.innerHTML='';
+    if(!klen){KEYO.textContent='—';return;}
+    for(let i=0;i<klen;i++){
+      const col=document.createElement('div');col.className='vcol';
+      col.innerHTML='<div class="h">COL '+(i+1)+'</div>'+
+        '<div class="kl">'+String.fromCharCode(65+colShift[i])+'</div>'+
+        '<div class="sv">shift '+colShift[i]+'</div>'+
+        '<div class="bt"><button data-d="-1">−</button><button data-d="1">+</button></div>';
+      col.querySelectorAll('button').forEach(b=>{
+        b.onclick=()=>{colShift[i]=(colShift[i]+ +b.dataset.d+26)%26;buildCols();render();};
+      });
+      COLS.appendChild(col);
+    }
+    KEYO.textContent=colShift.map(s=>String.fromCharCode(65+s)).join('');
+  }
+  function render(){
+    const c=CH[active];
+    const plain=vigDecrypt(cipher,colShift);
+    OUT.textContent=klen?plain:cipher;
+    if(!klen){VACC.textContent='';return;}
+    const key=colShift.map(s=>String.fromCharCode(65+s)).join('');
+    const trueKey=c.key.toUpperCase();
+    let msg='Key so far <b>'+key+'</b> · letter-pair fit <b>'+BG.fit(plain)+'</b>';
+    if(klen===trueKey.length&&key===trueKey) msg+=' · <b class="good">solved — that is the key</b>';
+    else if(klen!==trueKey.length) msg+=' · <b class="warn">key length '+klen+' is not giving English</b>';
+    VACC.innerHTML=msg;
+  }
+  function load(i){
+    active=i;klen=0;colShift=[];
+    cipher=vigenere(CH[i].plain,CH[i].key);
+    VTA.value=cipher;
+    markPicker(VP,i);
+    MET.innerHTML='<b>'+onlyLetters(cipher).length+'</b> letters · key length <b class="warn">unknown</b> · single-letter frequency on the whole message tells you nothing here';
+    buildIC();buildCols();render();
+  }
+
+  document.getElementById('s_auto').onclick=()=>{
+    if(!klen){ICL.innerHTML='<b class="warn">Pick a key length first — tap one of the bars.</b>';return;}
+    for(let i=0;i<klen;i++)colShift[i]=bestShift(columnOf(i));
+    buildCols();render();
+  };
+  document.getElementById('s_clear').onclick=()=>{
+    if(!klen)return;
+    colShift=new Array(klen).fill(0);buildCols();render();
+  };
+
+  mkPicker(CP,'caesar','Caesar','one number, 25 possibilities',loadCaesar);
+  mkPicker(VP,'vig','Vigenère','a keyword — find its length first',load);
+  loadCaesar(0);load(3);
+})();
+
 /* ================= BREAK — substitution solver ================= */
 (function(){
-  const ENGORDER="ETAOINSHRDLCUMWFGYPBVKJXQZ";
-  const ENGFREQ={E:12.7,T:9.1,A:8.2,O:7.5,I:7.0,N:6.7,S:6.3,H:6.1,R:6.0,D:4.3,L:4.0,C:2.8,U:2.8,
-    M:2.4,W:2.4,F:2.2,G:2.0,Y:2.0,P:1.9,B:1.5,V:1.0,K:0.8,J:0.15,X:0.15,Q:0.10,Z:0.07};
   // Four length bands. The whole point of the picker is that the SAME method
   // succeeds at the top and fails at the bottom, purely on sample size.
   const BANDS=[
@@ -508,20 +984,6 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
     {band:'vs', label:"Funds", note:"banking cable",
      plain:"SEND FUNDS VIA ZURICH CONFIRM RECEIPT", spec:{keyword:"LEDGER"}}
   ];
-
-  /* Reference English for the bigram tool. Deliberately ordinary prose: the
-     statistics must come from the language, not from the answer key. */
-  const CORPUS=
-    "There is nothing so likely to produce peace as to be well prepared to meet an enemy. "+
-    "The great question of the day is whether a nation so conceived can long endure. "+
-    "When a man is tired of the city he is tired of life, for there is in the city all that life can afford. "+
-    "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness. "+
-    "All happy families are alike; each unhappy family is unhappy in its own way. "+
-    "The past is a foreign country: they do things differently there. "+
-    "We hold these truths to be self evident, that all men are created equal. "+
-    "A little learning is a dangerous thing; drink deep, or taste not the spring. "+
-    "Whatever the reason, the letters of a language fall into habits that no writer can escape, "+
-    "and those habits are what a codebreaker counts on when the individual letters will not speak.";
   function alphaFromKeyword(kw){kw=(kw||"").toUpperCase().replace(/[^A-Z]/g,"");
     let seen=new Set(),out="";for(const c of kw+"ABCDEFGHIJKLMNOPQRSTUVWXYZ"){if(!seen.has(c)){seen.add(c);out+=c;}}return out;}
   function encWith(spec,plain){
@@ -547,7 +1009,12 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
     wTop1=document.getElementById('w_top1'), wTop1b=document.getElementById('w_top1b'),
     wTop2=document.getElementById('w_top2'), tool2=document.getElementById('tool2'),
     bgMeter=document.getElementById('b_bg'), pairsEl=document.getElementById('b_pairs'),
-    suggestEl=document.getElementById('b_suggest'), pairrack=document.getElementById('pairrack');
+    suggestEl=document.getElementById('b_suggest'), rack=document.getElementById('rack'),
+    rackT=document.getElementById('rack_t'), rackN=document.getElementById('rack_n'),
+    candsEl=document.getElementById('b_cands'), cWords=document.getElementById('c_words'),
+    cMeter=document.getElementById('c_meter'), cOwn=document.getElementById('c_own'),
+    tool3=document.getElementById('tool3'), bEra=document.getElementById('b_era'),
+    bH2=document.getElementById('b_h2');
 
   let map={};        // cipher letter -> plain letter; bijective because a tile exists in one place
   const slots={};    // cipher letter -> drop target
@@ -565,31 +1032,10 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
   let pairA=new Int8Array(0), pairB=new Int8Array(0);
 
   function buildBigrams(excludeIdx){
-    const cnt=new Float64Array(676);
-    let nPairs=0, nLetters=0;
-    const feed=txt=>{
-      let prev=-1;
-      for(const ch of txt.toUpperCase()){
-        const c=ch.charCodeAt(0)-65;
-        if(c>=0&&c<26){ if(prev>=0){cnt[prev*26+c]++;nPairs++;} nLetters++; prev=c; }
-        else prev=-1;                     // a pair never straddles a space or a comma
-      }
-    };
-    feed(CORPUS);
-    MESSAGES.forEach((m,i)=>{ if(i!==excludeIdx) feed(m.plain); });
-    refLetters=nLetters;
-    for(let a=0;a<26;a++){
-      let row=0; for(let b=0;b<26;b++) row+=cnt[a*26+b]+0.5;   // add-half smoothing: no pair is impossible
-      for(let b=0;b<26;b++) LOGP[a*26+b]=Math.log((cnt[a*26+b]+0.5)/row);
-    }
-    let sum=0; for(let k=0;k<676;k++) sum+=LOGP[k];
-    randAvg=sum/676;                                           // what a scrambled mapping scores
-    let e=0; for(let k=0;k<676;k++) e+=cnt[k]*LOGP[k];
-    engAvg=nPairs?e/nPairs:0;                                  // what real English scores
-    topEng=[];
-    for(let a=0;a<26;a++)for(let b=0;b<26;b++) if(cnt[a*26+b]) topEng.push([String.fromCharCode(65+a,65+b),cnt[a*26+b]]);
-    topEng.sort((x,y)=>y[1]-x[1]);
-    topEng=topEng.slice(0,24).map(x=>x[0]);
+    const texts=[CORPUS];
+    MESSAGES.forEach((m,i)=>{ if(i!==excludeIdx) texts.push(m.plain); });
+    const B=makeBigrams(texts);
+    LOGP.set(B.logp);randAvg=B.randAvg;engAvg=B.engAvg;topEng=B.top;refLetters=B.nLetters;
   }
   function buildPairs(){
     const A=[],B=[];let prev=-1;
@@ -693,12 +1139,164 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
       suggestEl.appendChild(t);
     });
   }
-  function applyPair(p){
-    assign(p.c1,p.p1);
-    if(p.c2!==p.c1) assign(p.c2,p.p2);
-    pin(p.c1);pin(p.c2);
+  /* One code path for every multi-letter drop: a pair block is two positions,
+     a crib candidate is however many letters the word has. */
+  function applyMulti(m){
+    for(let i=0;i<m.cs.length;i++) assign(m.cs[i],m.ps[i]);
+    for(let i=0;i<m.cs.length;i++) pin(m.cs[i]);
     touched();
   }
+
+  /* ---------- Tool 3: cribs (CBW's probable-word attack) ---------- */
+  let cribSel=null;
+  function patOf(w){
+    const m={};let o='',n=0;
+    for(const c of w){ if(!(c in m))m[c]=String.fromCharCode(65+n++); o+=m[c]; }
+    return o;                                   // GUUJ -> ABBC: the shape a word cannot hide
+  }
+  function allWords(){
+    const seen=new Map();
+    for(const w of ta.value.toUpperCase().split(/[^A-Z]+/)) if(w.length>=2) seen.set(w,(seen.get(w)||0)+1);
+    return [...seen.entries()].map(([w,n])=>({w,n,rep:w.length-new Set(w).size}));
+  }
+  /* Rank by how DECISIVE a word is, not by how exotic it looks. A cipher word with
+     one surviving candidate hands you the letters outright; one with none is a dead
+     end, however many repeated letters it has. */
+  function cribWords(){
+    const out=allWords().filter(o=>o.w.length>=3);
+    out.forEach(o=>{o.cands=CRIBWORDS.reduce((n,d)=>n+(fits(o.w,d)?1:0),0);});
+    return out
+      .sort((a,b)=>{
+        if(!a.cands!==!b.cands)return a.cands?-1:1;       // anything beats a dead end
+        if(a.cands&&b.cands&&a.cands!==b.cands)return a.cands-b.cands;
+        return (b.w.length-a.w.length)||(b.n-a.n);
+      })
+      .slice(0,12);
+  }
+  function fitWith(m){                          // letter-pair fit under a trial mapping
+    let s=0,n=0;
+    for(let k=0;k<pairA.length;k++){
+      const a=m[String.fromCharCode(65+pairA[k])],b=m[String.fromCharCode(65+pairB[k])];
+      if(!a||!b)continue;
+      s+=LOGP[(a.charCodeAt(0)-65)*26+(b.charCodeAt(0)-65)];n++;
+    }
+    if(!n)return 0;
+    return Math.max(0,Math.min(100,Math.round(100*((s/n)-randAvg)/(engAvg-randAvg))));
+  }
+  /* A crib OVERRIDES the machine. Only letters you pinned yourself constrain it —
+     otherwise, once a pair pass has filled all 26 slots, no crib could ever correct
+     anything, which defeats the entire point of the tool. */
+  function pinnedOwnerOf(p){
+    let owner=null;
+    pinned.forEach(c=>{ if(map[c]===p)owner=c; });
+    return owner;
+  }
+  function fits(cw,pw){
+    if(cw.length!==pw.length||patOf(cw)!==patOf(pw))return null;
+    const add={};
+    for(let i=0;i<cw.length;i++){
+      const c=cw[i],p=pw[i];
+      if(pinned.has(c)&&map[c]!==p)return null;     // you said this letter was something else
+      const owner=pinnedOwnerOf(p);
+      if(owner&&owner!==c)return null;              // you pinned that plaintext letter elsewhere
+      if(add[c]&&add[c]!==p)return null;
+      add[c]=p;
+    }
+    return add;
+  }
+  function gainOf(add){                             // letters this would ADD or CORRECT
+    let n=0;for(const c in add) if(map[c]!==add[c])n++;
+    return n;
+  }
+  /* Does this cipher word ALREADY read as an English word? If so, every alternative
+     is a change to something that is not broken — the commonest way a crib destroys
+     a board that was already correct. */
+  function readsAsWord(cw){
+    let s='';
+    for(const c of cw){ if(!map[c])return false; s+=map[c]; }
+    return CRIBSET.has(s);
+  }
+  function candidatesFor(W){
+    const out=[];
+    for(const d of CRIBWORDS){
+      const add=fits(W,d);
+      if(!add)continue;
+      out.push({cw:W,pw:d,add,gain:gainOf(add),fit:fitWith(Object.assign({},map,add))});
+    }
+    out.sort((a,b)=>b.fit-a.fit||b.gain-a.gain);
+    return out.slice(0,8);
+  }
+  function buildCribWords(){
+    cWords.innerHTML='';
+    const ws=cribWords();
+    if(!ws.length){cWords.innerHTML='<span class="bg">no words long enough to attack</span>';return;}
+    ws.forEach(o=>{
+      const b=document.createElement('button');
+      b.className='cword'+(o.w===cribSel?' on':'')+(o.cands?'':' done');
+      b.dataset.w=o.w;
+      b.innerHTML=o.w+'<em>'+(o.cands?o.cands:'—')+'</em>';
+      b.title=(o.cands?o.cands+' candidate word'+(o.cands===1?'':'s'):'no dictionary word fits')+
+        ' · pattern '+patOf(o.w)+(o.n>1?' · appears '+o.n+' times':'');
+      b.onclick=()=>pickCrib(o.w);
+      cWords.appendChild(b);
+    });
+  }
+  function showCands(list,note){
+    candsEl.innerHTML='';
+    const base=fitWith(map);
+    list.forEach(o=>{
+      const d=o.fit-base;
+      // Already-English text has nothing to gain from a crib, and the dictionary is far
+      // too small to recognise every correct word — so trust the fit as well, BUT only
+      // where there are enough pairs for the fit to mean anything. On a short message a
+      // fit of 100 is routinely nonsense, and a crib is the one tool that still works.
+      const settled=o.gain>0&&(readsAsWord(o.cw)||(base>=85&&pairA.length>=150));
+      const t=document.createElement('div');
+      t.className='cand'+(d<-1||settled?' risky':'');t.tabIndex=0;
+      t.setAttribute('role','button');
+      t.dataset.cw=o.cw;t.dataset.pw=o.pw;
+      t.setAttribute('aria-label','read '+o.cw+' as '+o.pw+
+        ', changes '+o.gain+' letters, fit '+(d>=0?'up ':'down ')+Math.abs(d));
+      t.title=settled?'The message already reads as English — changing it would undo correct letters.'
+             :d<-1?'This would make the message LESS English. Probably wrong.'
+             :'Changes '+o.gain+' letter'+(o.gain===1?'':'s')+', fit '+(d>=0?'+':'')+d;
+      t.innerHTML=o.cw+' <u>→</u> <b>'+o.pw.toLowerCase()+'</b> <i>'+
+        (o.gain?'±'+o.gain+' ':'')+(d>=0?'▲':'▼')+Math.abs(d)+'</i>';
+      candsEl.appendChild(t);
+    });
+    cMeter.innerHTML=note;
+  }
+  function pickCrib(W){
+    cribSel=W;buildCribWords();
+    const list=candidatesFor(W);
+    if(!list.length){
+      candsEl.innerHTML='';
+      cMeter.innerHTML='<b class="warn">No dictionary word fits '+W+'</b> given what is on your board. Either the word is not in the list, or a letter you have already placed is wrong — drag one off and try again.';
+      return;
+    }
+    showCands(list,list.length+' word'+(list.length===1?'':'s')+' fit <b>'+W+'</b> (pattern '+patOf(W)+
+      '). Drag one onto the bars to place every letter at once. <b>±n</b> is how many letters it changes; '+
+      '<b>▲/▼</b> is what it does to the letter-pair fit. <b class="warn">Amber means it makes the message less English</b> — almost always a wrong guess.');
+  }
+  document.getElementById('c_try').onclick=()=>{
+    const w=(cOwn.value||'').toUpperCase().replace(/[^A-Z]/g,'');
+    if(w.length<2){cMeter.innerHTML='<b class="warn">Type a word you expect the message to contain.</b>';return;}
+    const hits=[];
+    for(const o of allWords()){
+      const add=fits(o.w,w);
+      if(add)hits.push({cw:o.w,pw:w,add,gain:gainOf(add),fit:fitWith(Object.assign({},map,add))});
+    }
+    hits.sort((a,b)=>b.fit-a.fit||b.gain-a.gain);
+    cribSel=null;buildCribWords();
+    if(!hits.length){
+      candsEl.innerHTML='';
+      cMeter.innerHTML='<b class="warn">No word in this ciphertext has the shape of “'+w.toLowerCase()+'”</b> (pattern '+patOf(w)+
+        ') while staying consistent with your board. That is a real answer: the crib is probably not there.';
+      return;
+    }
+    showCands(hits.slice(0,8),'<b>'+hits.length+'</b> position'+(hits.length===1?'':'s')+
+      ' could be “'+w.toLowerCase()+'”. Drag one on to accept it — <b>▲</b> means it makes the message more English, <b class="warn">amber means less</b>.');
+  };
   function showPairs(){
     const c={};
     for(let k=0;k<pairA.length;k++){
@@ -816,7 +1414,33 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
   function pin(L){                   // a human put it there, so Tool 2 must leave it alone
     if(L in map){pinned.add(L);paintSlot(L);}
   }
-  function touched(){syncPool();acc.textContent='';showFit();showPairs();buildSuggest();}
+  /* ---------- the ladder: one ciphertext, three eras of technique ---------- */
+  const TOOLS=[document.getElementById('tool1'),document.getElementById('tool2'),tool3];
+  const ERAS=[
+    ['② Al-Kindi, Baghdad, c. 850 · the first cryptanalysis in history','Break it by counting letters'],
+    ['④ Friedman 1922 · mechanised by Baldwin’s Crypt Breaker’s Workbench, 1985','Break it with letter pairs'],
+    ['⑤ Bletchley Park, 1940 · the probable-word attack','Break it by guessing a word']
+  ];
+  let stage=1;
+  function showTool(n){
+    stage=n;
+    TOOLS.forEach((t,i)=>{t.hidden=(i+1)!==n;});
+    bEra.textContent=ERAS[n-1][0];bH2.textContent=ERAS[n-1][1];
+    rack.hidden=(n===1);
+    suggestEl.hidden=(n!==2);
+    candsEl.hidden=(n!==3);
+    rackT.textContent=n===2?'Tool ④ · suggested pairs':'Tool ⑤ · candidate words';
+    rackN.textContent=n===2?'drag a block onto the bars':'drag a word onto the bars';
+    if(n===3){buildCribWords();if(!candsEl.children.length&&!cMeter.textContent)
+      cMeter.innerHTML='Pick a cipher word above. Words with <b>repeated letters</b> narrow the field fastest.';}
+  }
+  cryptlab.showTool=showTool;
+  const unlock=n=>cryptlab.unlockTab(n===2?2:3);
+
+  function touched(){
+    syncPool();acc.textContent='';showFit();showPairs();buildSuggest();
+    if(stage===3)buildCribWords();
+  }
   function showFit(){
     if(!pairA.length){bgMeter.textContent='';return;}
     const f=fitPct(completeMap());
@@ -827,6 +1451,12 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
 
   /* ---------- pointer drag: one path for mouse, touch and stylus ---------- */
   let pend=null,drag=null,sel=null,scrollDir=0,raf=0;
+
+  function multiOf(el){
+    return el.dataset.cw
+      ? {cs:el.dataset.cw.split(''), ps:el.dataset.pw.split('')}          // crib word
+      : {cs:[el.dataset.c1,el.dataset.c2], ps:[el.dataset.p1,el.dataset.p2]};  // pair block
+  }
 
   function markSel(){
     document.querySelectorAll('.tile.sel,.slot.sel').forEach(n=>n.classList.remove('sel'));
@@ -847,10 +1477,9 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
   function onDown(e){
     if(e.button!=null&&e.button>0)return;
     if(!e.target||!e.target.closest)return;
-    const pt=e.target.closest('.ptile');
-    if(pt){
-      pend={tile:pt,x:e.clientX,y:e.clientY,
-        pair:{c1:pt.dataset.c1,c2:pt.dataset.c2,p1:pt.dataset.p1,p2:pt.dataset.p2}};
+    const blk=e.target.closest('.ptile,.cand');
+    if(blk){
+      pend={tile:blk,x:e.clientX,y:e.clientY,multi:multiOf(blk)};
       e.preventDefault();return;
     }
     const tile=e.target.closest('.tile');
@@ -880,7 +1509,7 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
     scrollDir=e.clientX<r.left+36?-1:(e.clientX>r.right-36?1:0);
   }
   function startDrag(){
-    const g=pend.pair?pend.tile.cloneNode(true):mkTile(pend.letter,!pend.from);
+    const g=pend.multi?pend.tile.cloneNode(true):mkTile(pend.letter,!pend.from);
     g.classList.add('ghost');g.removeAttribute('tabindex');
     document.body.appendChild(g);
     pend.tile.classList.add('lifted');
@@ -903,10 +1532,10 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
     clearHover();
     const el=document.elementFromPoint(x,y);
     if(!el||!el.closest)return;
-    if(pend.pair){                                       // a two-letter block lands on both its bars
+    if(pend.multi){                                      // a block lands on every bar it covers
       if(el.closest('#subhist')){
         sub.classList.add('pairdrop');
-        [pend.pair.c1,pend.pair.c2].forEach(c=>{const s=slots[c];if(s)s.classList.add('pairover');});
+        pend.multi.cs.forEach(c=>{const s=slots[c];if(s)s.classList.add('pairover');});
       }
       return;
     }
@@ -918,9 +1547,9 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
     if(!pend)return;
     if(pend.slotTap!=null){const t=pend.slotTap;pend=null;if(sel)place(t);return;}
     if(!drag){tap();pend=null;return;}
-    if(pend.pair){
+    if(pend.multi){
       const hit=document.elementFromPoint(e.clientX,e.clientY);
-      if(hit&&hit.closest&&hit.closest('#subhist')) applyPair(pend.pair);
+      if(hit&&hit.closest&&hit.closest('#subhist')) applyMulti(pend.multi);
       else {drag.ghost.classList.add('gone');poof(e.clientX,e.clientY);}   // suggestion declined
       endDrag();return;
     }
@@ -949,7 +1578,7 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
     if(raf){cancelAnimationFrame(raf);raf=0;}
   }
   function tap(){                                         // a press that never moved: pick up / put down
-    if(pend.pair){applyPair(pend.pair);return;}            // tapping a suggestion accepts it
+    if(pend.multi){applyMulti(pend.multi);return;}          // tapping a suggestion accepts it
     const L=pend.letter,from=pend.from;
     if(sel&&from)place(from);
     else if(sel&&!from&&!sel.slot&&sel.letter===L){sel=null;markSel();}
@@ -973,10 +1602,10 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
   document.addEventListener('keydown',e=>{                // same state machine, without a pointer
     if(e.key!=='Enter'&&e.key!==' ')return;
     if(!e.target||!e.target.closest)return;
-    const t=e.target.closest('.ptile,.tile,.slot');if(!t)return;
+    const t=e.target.closest('.ptile,.cand,.tile,.slot');if(!t)return;
     e.preventDefault();
-    if(t.classList.contains('ptile')){
-      applyPair({c1:t.dataset.c1,c2:t.dataset.c2,p1:t.dataset.p1,p2:t.dataset.p2});
+    if(t.classList.contains('ptile')||t.classList.contains('cand')){
+      applyMulti(multiOf(t));
     } else if(t.classList.contains('tile')){
       if(t.classList.contains('used'))return;
       const from=t.dataset.from||null;
@@ -1014,8 +1643,10 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
   function loadMsg(i){
     active=i;ta.value=encWith(MESSAGES[i].spec,MESSAGES[i].plain);
     map={};pinned.clear();sel=null;undoState=null;acc.textContent='';
+    cribSel=null;candsEl.innerHTML='';cMeter.textContent='';
     buildBigrams(i);buildPairs();
     buildHist();buildOut();syncPool();markSel();markPicker();showFit();showPairs();buildSuggest();
+    if(stage===3)buildCribWords();
     sol.textContent='“'+MESSAGES[i].plain+'”';
   }
   function correctCount(letters){          // only meaningful for built-in challenges
@@ -1038,12 +1669,11 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
     letters.forEach((L,i)=>{if(i<26)map[L]=ENGORDER[i];});   // ranking is already unique
     for(const L of letters)paintSlot(L);
     paintOut();syncPool();sel=null;markSel();showFit();showPairs();buildSuggest();
-    tool2.classList.remove('locked');                        // the wall is where the next tool belongs
-    pairrack.hidden=false;                                   // the blocks live beside the bars you drop them on
+    unlock(2);                                               // the wall is where the next tool belongs
     if(active<0){acc.textContent='Pasted text — no answer key, so there is nothing to score against.';return;}
     const band=BANDS.find(b=>b.id===MESSAGES[active].band);
     acc.innerHTML=scoreLine(correctCount(letters),letters.length,'Single-letter ranking alone got')+
-      ' on this '+(band?band.title.toLowerCase():'')+' message. Tool 2 is now open below.';
+      ' on this '+(band?band.title.toLowerCase():'')+' message. <b>Tab ④ Bigrams is now unlocked</b> — same ciphertext, a statistic a thousand years newer.';
   };
 
   document.getElementById('b_bigram').onclick=()=>{
@@ -1061,8 +1691,10 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
       '</b> · moved <b>'+changed+'</b> letter'+(changed===1?'':'s')+' · searched '+res.restarts+
       ' starting points · kept your '+pinned.size+' pinned';
     if(active>=0) msg+='<br>'+scoreLine(correctCount(order),order.length,'Now');
-    msg+='<br>Read the plaintext. Drag a fix onto any letter that is wrong — it pins — then run this again.';
+    msg+='<br>Read the plaintext. Drag a fix onto any letter that is wrong — it pins — then run this again. '+
+      '<b>Tab ⑤ Cribs is now unlocked</b> for when the statistics run out.';
     bgMeter.innerHTML=msg;
+    unlock(3);
   };
   document.getElementById('b_undo').onclick=()=>{
     if(!undoState){bgMeter.textContent='Nothing to undo.';return;}
@@ -1085,7 +1717,7 @@ function vigenere(s,key){key=(key||'').toUpperCase().replace(/[^A-Z]/g,'');if(!k
     sol.textContent='(pick one of the challenges above to reveal its solution)';
   };
 
-  buildPool();buildPicker();
+  buildPool();buildPicker();showTool(1);cMeter.textContent='';
   loadMsg(MESSAGES.findIndex(m=>m.band==='m'));   // open mid-length: long enough to work, short enough to read
 })();
 </script>
