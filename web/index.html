@@ -349,12 +349,12 @@
       <button data-p="vig">③ Vigenère<span class="z">1863</span></button>
       <button data-p="brk" data-t="2" class="lock">④ Bigrams<span class="z">1922</span></button>
       <button data-p="brk" data-t="3" class="lock">⑤ Cribs<span class="z">1940</span></button>
-      <button data-p="otp">⑥ One-time pad<span class="z">1949</span></button>
+      <button data-p="otp" hidden>⑥ One-time pad<span class="z">1949</span></button>
       <button data-p="rsa">⑦ RSA<span class="z">1977</span></button>
       <button data-p="shor">⑧ Shor<span class="z">1994</span></button>
     </nav>
   </div>
-  <p class="lede" style="margin:8px auto 0;font-size:12.5px">Nine tabs, in the order history found them. Each cipher leaks something different, and each tool works <b style="color:var(--ink)">only while its assumptions hold</b>.</p>
+  <p class="lede" style="margin:8px auto 0;font-size:12.5px">Eight tabs, in the order history found them. Each cipher leaks something different, and each tool works <b style="color:var(--ink)">only while its assumptions hold</b>.</p>
 
   <!-- ============ ENCRYPT ============ -->
   <section class="panel on" id="enc">
@@ -808,7 +808,7 @@
       </details>
       <details class="edu"><summary>What this does and does not break — and when</summary>
         <div class="b"><p><b>Breaks outright:</b> RSA, Diffie–Hellman and elliptic curve cryptography. All three rest on factoring or discrete logarithms, and Shor dissolves both. That is essentially every public-key algorithm securing the internet today.</p>
-        <p><b>Does not break:</b> symmetric ciphers. The best known quantum attack on a key search is Grover's, which gives a square-root speedup — AES-256 retains around 128 bits against it, still far out of reach. Hashes are less tidy: preimage search gets the same square-root treatment, while <i>collision</i> resistance is a different problem with its own bounds, so "halve the security" is not one rule covering all hash properties. The one-time pad in tab ⑥ remains perfectly secret regardless, because Shannon's proof is information-theoretic and does not care what machine you own.</p>
+        <p><b>Does not break:</b> symmetric ciphers. The best known quantum attack on a key search is Grover's, which gives a square-root speedup — AES-256 retains around 128 bits against it, still far out of reach. Hashes are less tidy: preimage search gets the same square-root treatment, while <i>collision</i> resistance is a different problem with its own bounds, so "halve the security" is not one rule covering all hash properties. The one-time pad remains perfectly secret regardless, because Shannon's proof is information-theoretic and does not care what machine you own.</p>
         <p><b>When:</b> no machine capable of running Shor at these sizes exists, and published expert forecasts range from about a decade to never. Treat any single figure — including ten years — as an opinion rather than a measurement. What is <i>not</i> an opinion is that the replacements are already standards: NIST published <b>ML-KEM</b> (FIPS 203), <b>ML-DSA</b> (FIPS 204) and <b>SLH-DSA</b> (FIPS 205) with effect from 14 August 2024, adding code-based <b>HQC</b> as a backup in March 2025, and guidance deprecates today's public-key algorithms by <b>2030</b> and disallows them by <b>2035</b>.</p></div>
       </details>
       <details class="edu"><summary>Why the deadline is already behind you</summary>
@@ -1081,7 +1081,7 @@ function makeBigrams(texts){
       out.textContent=padApply(inp.value,enc?1:-1);
       padMsg.innerHTML=padShort
         ? '<b class="bad">The message has outgrown the pad.</b> Uncovered letters are shown as · and withheld — a pad that runs out does not quietly stop encrypting. Press <b>Fresh pad</b>.'
-        : 'Generated with <span class="k">crypto.getRandomValues</span>. Real pads need a physical entropy source, and must never be used twice — see tab ⑥.';
+        : 'Generated with <span class="k">crypto.getRandomValues</span>. Real pads need a physical entropy source, and must never be used twice.';
     } else if(mode==='rotor'){
       const p=(rotorEl.value.toUpperCase().replace(/[^A-Z]/g,'')+'AAA').slice(0,3)
         .split('').map(c=>c.charCodeAt(0)-65);
@@ -2236,8 +2236,9 @@ function makeBigrams(texts){
   }
   cryptlab.showTool=showTool;
   const unlock=n=>cryptlab.unlockTab(n===2?2:3);
-  /* The main button unlocks the next tab at once; working the board by hand earns
-     it too. Any eight actions in ② open ④, any eight in ④ open ⑤. */
+  /* The main button unlocks the next tab at once; working the board earns it too:
+     any eight clicks in ② open ④, any eight in ④ open ⑤. Counted on the panel, so
+     the clicked control's own handler has run before the notice is written. */
   const acts={1:0,2:0};
   function act(){
     if(!(stage in acts)||++acts[stage]<8)return;
@@ -2245,15 +2246,14 @@ function makeBigrams(texts){
     if(!b||!b.classList.contains('lock'))return;
     unlock(next);
     (stage===1?acc:bgMeter).insertAdjacentHTML('beforeend',
-      '<br><b>Tab '+(next===2?'④ Bigrams':'⑤ Cribs')+' is now unlocked</b> — eight moves earned it.');
+      '<br><b>Tab '+(next===2?'④ Bigrams':'⑤ Cribs')+' is now unlocked</b> — eight clicks earned it.');
   }
-  TOOLS.slice(0,2).forEach(t=>t.addEventListener('click',e=>{if(e.target.closest('button'))act();}));
+  document.getElementById('brk').addEventListener('click',act);
 
   function touched(){
     stepEnd();
     syncPool();acc.textContent='';showFit();showPairs();buildSuggest();
     if(stage===3)buildCribWords();
-    act();                                   // last, so its unlock notice is not overwritten
   }
   function showFit(){
     if(!pairA.length){bgMeter.textContent='';return;}

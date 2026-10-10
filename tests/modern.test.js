@@ -200,8 +200,8 @@ test.describe('⑥ One-time pad is hidden', () => {
     test('its tab is not shown, and nothing visible points at it', async ({ page }) => {
         await page.goto('/');
         await expect(page.locator('#seg button[data-p="otp"]')).toBeHidden();
-        await expect(page.locator('.lede').first()).toContainText('Eight tabs');
         const visible = await page.evaluate(() => document.body.innerText);
+        expect(visible).toContain('Eight tabs');
         expect(visible).not.toContain('tab ⑥');
     });
 });
