@@ -1048,8 +1048,9 @@ function makeBigrams(texts){
       '<dt>Note</dt><dd style="color:var(--muted)">Anyone holding N and e can encrypt. Only d decrypts — and computing d needs p and q, which is tab ⑦.</dd>';
   }
 
+  let carry=null;                          // the last real result, handed to the input when direction flips
   function render(){
-    const enc=dir==='enc';
+    const enc=dir==='enc';carry=null;
     if(mode==='caesar'){
       out.textContent=caesar(inp.value,enc?shift:26-shift);
       document.getElementById('ringInner').setAttribute('transform','rotate('+(shift*360/26)+')');
@@ -1072,10 +1073,11 @@ function makeBigrams(texts){
       if(enc) out.textContent=rsaEncode(inp.value).map(m=>rsaModPow(m,s.e,s.N)).join(' ');
       else {
         const blocks=inp.value.trim().split(/\s+/).filter(x=>/^\d+$/.test(x)).map(BigInt);
-        out.textContent=blocks.length?rsaDecode(blocks.map(c=>rsaModPow(c,s.d,s.N)))
-          :'(paste the space-separated numbers from an RSA encryption)';
+        if(!blocks.length){out.textContent='(type or paste the space-separated numbers from an RSA encryption into the box above)';return;}
+        out.textContent=rsaDecode(blocks.map(c=>rsaModPow(c,s.d,s.N)));
       }
     }
+    carry=out.textContent;
   }
   function syncControls(){
     keyWrap.style.display=mode==='vig'?'block':'none';
@@ -1091,6 +1093,7 @@ function makeBigrams(texts){
     if(mode==='pad')freshPad();
     syncControls();render();};
   dirEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.d!==dir&&carry!==null)inp.value=carry;   // encrypt, then decrypt what you just made
     dir=b.dataset.d;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));render();};
   document.getElementById('e_newpad').onclick=()=>{freshPad();render();};
   rotorEl.oninput=render;
@@ -2531,8 +2534,8 @@ function makeBigrams(texts){
       stTrialEl.dataset.a=ca;stTrialEl.dataset.b=cb;
       stTrialEl.dataset.before=tr.before;stTrialEl.dataset.after=tr.after;
       stTrialEl.dataset.verdict=tr.kept?'kept':'reverted';
-      stTrialEl.innerHTML='Exchange <b>'+low(prev[a])+'</b> ↔ <b>'+low(prev[b])+'</b>'+
-        ' <span style="opacity:.7">(cipher '+ca+' and '+cb+')</span>'+
+      stTrialEl.innerHTML='Cipher <b>'+ca+'</b> reads <b>'+low(prev[a])+'</b> and cipher <b>'+cb+'</b> reads <b>'+low(prev[b])+
+        '</b> — try them the other way round, so every '+ca+' becomes <b>'+low(prev[b])+'</b> and every '+cb+' becomes <b>'+low(prev[a])+'</b>:'+
         '<table class="stx">'+words.map(w=>'<tr><td>'+read(w,prev)+'</td><td>→ '+read(w,sw)+'</td></tr>').join('')+'</table>'+
         '<div>Pairs it changes:</div><table class="stx">'+rows.map(g=>
           '<tr><td>'+pr(g.o)+' → '+pr(g.nw)+' ×'+g.n+'</td><td>'+LOGP[g.o].toFixed(1)+' → '+LOGP[g.nw].toFixed(1)+
