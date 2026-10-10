@@ -26,6 +26,7 @@ test.describe('Review regressions', () => {
 
     test('crib dragging distinguishes the two directions instead of claiming symmetry', async ({ page }) => {
         await page.goto('/');
+        await page.evaluate(() => { document.querySelector('#seg button[data-p="otp"]').hidden = false; });   // hidden tab, kept panel
         await page.click('#seg button[data-p="otp"]');
         await page.fill('#otp_crib', 'COURIER');
 
@@ -103,7 +104,10 @@ test.describe('Stories are placed where they do teaching work', () => {
         test(`${panel} carries the ${a} story`, async ({ page }) => {
             await page.goto('/');
             if (panel === 'brk') await page.click('#seg button[data-t="1"]');
-            else await page.click(`#seg button[data-p="${panel}"]`);
+            else {
+                await page.evaluate(() => document.querySelectorAll('#seg button[hidden]').forEach((b) => { b.hidden = false; }));
+                await page.click(`#seg button[data-p="${panel}"]`);
+            }
             const text = await page.locator(`#${panel}`).textContent();
             expect(text).toContain(a);
             expect(text).toContain(b);

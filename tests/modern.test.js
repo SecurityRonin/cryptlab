@@ -1,8 +1,12 @@
 import { test, expect } from '@playwright/test';
 
+// ⑥ One-time pad is hidden from students for now; its panel is kept, and tested.
+const showHiddenTabs = (page) => page.evaluate(() => document.querySelectorAll('#seg button[hidden]').forEach((b) => { b.hidden = false; }));
+
 test.describe('⑥ One-time pad — the cipher that wins', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
+        await showHiddenTabs(page);
         await page.click('#seg button[data-p="otp"]');
     });
 
@@ -161,10 +165,10 @@ test.describe('⑧ Shor — factoring by finding a period', () => {
 });
 
 test.describe('The complete timeline', () => {
-    test('nine tabs, in chronological order, each with its year', async ({ page }) => {
+    test('eight visible tabs, in chronological order, each with its year', async ({ page }) => {
         await page.goto('/');
         const tabs = await page.locator('#seg button').evaluateAll((bs) =>
-            bs.map((b) => `${b.firstChild.textContent.trim()}|${b.querySelector('.z').textContent.trim()}`),
+            bs.filter((b) => !b.hidden).map((b) => `${b.firstChild.textContent.trim()}|${b.querySelector('.z').textContent.trim()}`),
         );
         expect(tabs).toEqual([
             'Encrypt|加密',
@@ -173,7 +177,6 @@ test.describe('The complete timeline', () => {
             '③ Vigenère|1863',
             '④ Bigrams|1922',
             '⑤ Cribs|1940',
-            '⑥ One-time pad|1949',
             '⑦ RSA|1977',
             '⑧ Shor|1994',
         ]);
@@ -184,6 +187,7 @@ test.describe('The complete timeline', () => {
         page.on('pageerror', (e) => errors.push(String(e)));
         page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
         await page.goto('/');
+        await showHiddenTabs(page);
         for (const p of ['enc', 'cae', 'brk', 'vig', 'otp', 'rsa', 'shor']) {
             await page.click(`#seg button[data-p="${p}"]`);
             await expect(page.locator(`section#${p}`)).toHaveClass(/on/);
@@ -191,3 +195,14 @@ test.describe('The complete timeline', () => {
         expect(errors).toEqual([]);
     });
 });
+
+test.describe('⑥ One-time pad is hidden', () => {
+    test('its tab is not shown, and nothing visible points at it', async ({ page }) => {
+        await page.goto('/');
+        await expect(page.locator('#seg button[data-p="otp"]')).toBeHidden();
+        await expect(page.locator('.lede').first()).toContainText('Eight tabs');
+        const visible = await page.evaluate(() => document.body.innerText);
+        expect(visible).not.toContain('tab ⑥');
+    });
+});
+
