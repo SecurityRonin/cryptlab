@@ -28,6 +28,31 @@ test.describe('Encrypt — every cipher the lab breaks, you can also build', () 
         });
     }
 
+    // students should not have to copy the ciphertext by hand to undo it
+    for (const mode of ['caesar', 'vig', 'pad', 'rsa']) {
+        test(`${mode}: switching direction carries the result into the input`, async ({ page }) => {
+            const plain = 'MEET ME AT MIDNIGHT';
+            await page.click(`#e_modes button[data-m="${mode}"]`);
+            await page.click('#e_dir button[data-d="enc"]');
+            await page.fill('#e_in', plain);
+            const ct = await out(page).textContent();
+            await page.click('#e_dir button[data-d="dec"]');
+            expect(await page.locator('#e_in').inputValue()).toBe(ct);
+            expect(await out(page).textContent()).toBe(plain);
+            await page.click('#e_dir button[data-d="dec"]');            // pressing it again changes nothing
+            expect(await page.locator('#e_in').inputValue()).toBe(ct);
+        });
+    }
+
+    test('RSA decrypt with no numbers points at the input box, and is never carried over', async ({ page }) => {
+        await page.click('#e_modes button[data-m="rsa"]');
+        await page.click('#e_dir button[data-d="dec"]');
+        await page.fill('#e_in', 'not numbers');
+        await expect(out(page)).toContainText('box above');
+        await page.click('#e_dir button[data-d="enc"]');
+        expect(await page.locator('#e_in').inputValue()).toBe('not numbers');
+    });
+
     test('a rotor machine is reciprocal, so it hides the direction toggle', async ({ page }) => {
         await page.click('#e_modes button[data-m="rotor"]');
         await expect(page.locator('#e_dir')).toBeHidden();
