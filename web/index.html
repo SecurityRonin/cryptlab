@@ -282,6 +282,14 @@
   .cword.on{border-color:var(--gold);color:var(--gold);background:rgba(217,180,106,.12)}
   .cword em{font-style:normal;opacity:.5;font-size:10px;margin-left:5px}
   .cword.done{opacity:.35}
+  .cranked{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+  .crow{appearance:none;display:flex;align-items:baseline;gap:10px;text-align:left;cursor:pointer;
+    padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:#0c0d14;color:var(--ink);font:13px/1.3 var(--mono)}
+  .crow:hover{border-color:var(--teal)}
+  .crow .n{color:var(--muted);min-width:2ch;text-align:right}
+  .crow b{color:var(--teal);min-width:9ch;letter-spacing:1px}
+  .crow i{font-style:normal;color:var(--muted);font-size:11px}
+  .crow.risky b{color:#e0a458} .crow.risky{border-color:rgba(224,164,88,.4)}
   .cands{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;min-height:10px}
   .cand{position:relative;display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border-radius:9px;
     font:700 13px/1 var(--mono);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
@@ -580,6 +588,7 @@
 
         <div class="tlabel" style="margin-top:14px">Cipher words worth attacking <span>— repeats leak the most</span></div>
         <div class="cribwords" id="c_words"></div>
+        <div class="cranked" id="c_ranked"></div>
 
         <div class="row">
           <input type="text" id="c_own" spellcheck="false" placeholder="OR TYPE A WORD YOU EXPECT" style="flex:1;min-width:190px">
@@ -1707,7 +1716,7 @@ function makeBigrams(texts){
     bgMeter=document.getElementById('b_bg'), pairsEl=document.getElementById('b_pairs'),
     suggestEl=document.getElementById('b_suggest'), rack=document.getElementById('rack'),
     rackT=document.getElementById('rack_t'), rackN=document.getElementById('rack_n'),
-    candsEl=document.getElementById('b_cands'), cWords=document.getElementById('c_words'),
+    candsEl=document.getElementById('b_cands'), cWords=document.getElementById('c_words'), cRanked=document.getElementById('c_ranked'),
     cMeter=document.getElementById('c_meter'), cOwn=document.getElementById('c_own'),
     tool3=document.getElementById('tool3'), bEra=document.getElementById('b_era'),
     bH2=document.getElementById('b_h2');
@@ -1923,7 +1932,7 @@ function makeBigrams(texts){
       out.push({cw:W,pw:d,add,gain:gainOf(add),fit:fitWith(Object.assign({},map,add))});
     }
     out.sort((a,b)=>b.fit-a.fit||b.gain-a.gain);
-    return out.slice(0,8);
+    return out.slice(0,10);
   }
   function buildCribWords(){
     cWords.innerHTML='';
@@ -1940,18 +1949,22 @@ function makeBigrams(texts){
       cWords.appendChild(b);
     });
   }
+  function judge(o,base){
+    const d=o.fit-base;
+    // Already-English text has nothing to gain from a crib, and the dictionary is far
+    // too small to recognise every correct word — so trust the fit as well, BUT only
+    // where there are enough pairs for the fit to mean anything. On a short message a
+    // fit of 100 is routinely nonsense, and a crib is the one tool that still works.
+    const settled=o.gain>0&&(readsAsWord(o.cw)||(base>=85&&pairA.length>=150));
+    return {d,settled,risky:d<-1||settled};
+  }
   function showCands(list,note){
     candsEl.innerHTML='';
     const base=fitWith(map);
     list.forEach(o=>{
-      const d=o.fit-base;
-      // Already-English text has nothing to gain from a crib, and the dictionary is far
-      // too small to recognise every correct word — so trust the fit as well, BUT only
-      // where there are enough pairs for the fit to mean anything. On a short message a
-      // fit of 100 is routinely nonsense, and a crib is the one tool that still works.
-      const settled=o.gain>0&&(readsAsWord(o.cw)||(base>=85&&pairA.length>=150));
+      const {d,settled,risky}=judge(o,base);
       const t=document.createElement('div');
-      t.className='cand'+(d<-1||settled?' risky':'');t.tabIndex=0;
+      t.className='cand'+(risky?' risky':'');t.tabIndex=0;
       t.setAttribute('role','button');
       t.dataset.cw=o.cw;t.dataset.pw=o.pw;
       t.setAttribute('aria-label','read '+o.cw+' as '+o.pw+
@@ -1965,35 +1978,70 @@ function makeBigrams(texts){
     });
     cMeter.innerHTML=note;
   }
+  /* The same candidates as the rack, as a numbered shortlist you can simply click. */
+  function showRanked(list){
+    cRanked.innerHTML='';
+    const base=fitWith(map);
+    list.forEach((o,i)=>{
+      const {d,settled,risky}=judge(o,base),b=document.createElement('button');
+      b.className='crow'+(risky?' risky':'');
+      Object.assign(b.dataset,{rank:i+1,cw:o.cw,pw:o.pw,fit:o.fit,gain:o.gain});
+      b.innerHTML='<span class="n">'+(i+1)+'</span><b>'+o.pw.toLowerCase()+'</b><i>fit '+o.fit+' ('+(d>=0?'▲':'▼')+Math.abs(d)+
+        ') · changes '+o.gain+' letter'+(o.gain===1?'':'s')+(settled?' · would undo letters that already read as English':
+        d<-1?' · makes it less English':'')+'</i>';
+      b.onclick=()=>useCrib(o.cw,o.pw);
+      cRanked.appendChild(b);
+    });
+  }
+  function clearCribSel(){
+    cribSel=null;cRanked.innerHTML='';cOwn.placeholder='OR TYPE A WORD YOU EXPECT';
+  }
+  function useCrib(cw,pw){
+    const add=fits(cw,pw),n=gainOf(add);
+    applyMulti({cs:cw.split(''),ps:pw.split('')});
+    clearCribSel();candsEl.innerHTML='';buildCribWords();cOwn.value='';
+    cMeter.innerHTML='Placed <b>'+cw+'</b> as <b>'+pw.toLowerCase()+'</b> · '+n+' letter'+(n===1?'':'s')+
+      ' changed, all pinned. Read the plaintext — if it got worse, the guess was wrong: drag a letter off.';
+  }
   function pickCrib(W){
     cribSel=W;buildCribWords();
+    cOwn.placeholder='OR TYPE YOUR OWN GUESS FOR '+W;
     const list=candidatesFor(W);
+    showRanked(list);
     if(!list.length){
       candsEl.innerHTML='';
       cMeter.innerHTML='<b class="warn">No dictionary word fits '+W+'</b> given what is on your board. Either the word is not in the list, or a letter you have already placed is wrong — drag one off and try again.';
       return;
     }
-    showCands(list,list.length+' word'+(list.length===1?'':'s')+' fit <b>'+W+'</b> (pattern '+patOf(W)+
-      '). Drag one onto the bars to place every letter at once. <b>±n</b> is how many letters it changes; '+
+    showCands(list,'Best '+list.length+' word'+(list.length===1?'':'s')+' that fit <b>'+W+'</b> (pattern '+patOf(W)+
+      '), most English first. Click one, drag a block onto the bars, or type your own guess for '+W+'. <b>±n</b> is how many letters it changes; '+
       '<b>▲/▼</b> is what it does to the letter-pair fit. <b class="warn">Amber means it makes the message less English</b> — almost always a wrong guess.');
   }
   document.getElementById('c_try').onclick=()=>{
     const w=(cOwn.value||'').toUpperCase().replace(/[^A-Z]/g,'');
     if(w.length<2){cMeter.innerHTML='<b class="warn">Type a word you expect the message to contain.</b>';return;}
+    if(cribSel){                                 // a word is selected: the guess is for that word
+      const W=cribSel,lw=w.toLowerCase();
+      if(w.length!==W.length){cMeter.innerHTML='<b class="warn">'+W+' has '+W.length+' letters; “'+lw+'” has '+w.length+'.</b>';return;}
+      if(patOf(w)!==patOf(W)){cMeter.innerHTML='<b class="warn">“'+lw+'” cannot be '+W+'</b>: its repeated letters do not line up (pattern '+
+        patOf(w)+' vs '+patOf(W)+'). A cipher letter always stands for the same plaintext letter.';return;}
+      if(!fits(W,w)){cMeter.innerHTML='<b class="warn">“'+lw+'” contradicts a letter you pinned.</b> Drag that letter off first if you think the pin is wrong.';return;}
+      useCrib(W,w);return;
+    }
     const hits=[];
     for(const o of allWords()){
       const add=fits(o.w,w);
       if(add)hits.push({cw:o.w,pw:w,add,gain:gainOf(add),fit:fitWith(Object.assign({},map,add))});
     }
     hits.sort((a,b)=>b.fit-a.fit||b.gain-a.gain);
-    cribSel=null;buildCribWords();
+    clearCribSel();buildCribWords();
     if(!hits.length){
       candsEl.innerHTML='';
       cMeter.innerHTML='<b class="warn">No word in this ciphertext has the shape of “'+w.toLowerCase()+'”</b> (pattern '+patOf(w)+
         ') while staying consistent with your board. That is a real answer: the crib is probably not there.';
       return;
     }
-    showCands(hits.slice(0,8),'<b>'+hits.length+'</b> position'+(hits.length===1?'':'s')+
+    showCands(hits.slice(0,10),'<b>'+hits.length+'</b> position'+(hits.length===1?'':'s')+
       ' could be “'+w.toLowerCase()+'”. Drag one on to accept it — <b>▲</b> means it makes the message more English, <b class="warn">amber means less</b>.');
   };
   function showPairs(){
@@ -2343,7 +2391,7 @@ function makeBigrams(texts){
   function loadMsg(i){
     active=i;ta.value=encWith(MESSAGES[i].spec,MESSAGES[i].plain);stepEnd();
     map={};pinned.clear();sel=null;undoState=null;acc.textContent='';
-    cribSel=null;candsEl.innerHTML='';cMeter.textContent='';
+    clearCribSel();candsEl.innerHTML='';cMeter.textContent='';
     buildBigrams(i);buildPairs();
     buildHist();buildOut();syncPool();markSel();markPicker();showFit();showPairs();buildSuggest();
     if(stage===3)buildCribWords();
