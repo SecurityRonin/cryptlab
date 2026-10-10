@@ -4,5 +4,3 @@ test-results/
 
 # Local Netlify folder
 .netlify
-.vercel
-.env*
