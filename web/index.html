@@ -2226,11 +2226,24 @@ function makeBigrams(texts){
   }
   cryptlab.showTool=showTool;
   const unlock=n=>cryptlab.unlockTab(n===2?2:3);
+  /* The main button unlocks the next tab at once; working the board by hand earns
+     it too. Any eight actions in ② open ④, any eight in ④ open ⑤. */
+  const acts={1:0,2:0};
+  function act(){
+    if(!(stage in acts)||++acts[stage]<8)return;
+    const next=stage+1, b=document.querySelector('#seg button[data-t="'+next+'"]');
+    if(!b||!b.classList.contains('lock'))return;
+    unlock(next);
+    (stage===1?acc:bgMeter).insertAdjacentHTML('beforeend',
+      '<br><b>Tab '+(next===2?'④ Bigrams':'⑤ Cribs')+' is now unlocked</b> — eight moves earned it.');
+  }
+  TOOLS.slice(0,2).forEach(t=>t.addEventListener('click',e=>{if(e.target.closest('button'))act();}));
 
   function touched(){
     stepEnd();
     syncPool();acc.textContent='';showFit();showPairs();buildSuggest();
     if(stage===3)buildCribWords();
+    act();                                   // last, so its unlock notice is not overwritten
   }
   function showFit(){
     if(!pairA.length){bgMeter.textContent='';return;}
