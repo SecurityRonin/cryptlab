@@ -185,6 +185,20 @@
 
   /* observed letter-pairs vs English letter-pairs */
   .bgrid{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .stepbox{border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin-top:12px;
+    background:rgba(17,18,26,.5);font-size:13px;color:var(--muted);line-height:1.6}
+  .stepbox b{color:var(--ink)}
+  .stepbox [hidden]{display:none!important}   /* button.act sets display, which would beat the attribute */
+  .stepbox button.act{height:38px;font-size:13px;padding:0 12px}
+  .sps{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px}
+  .sp{font:700 12px/1.15 var(--mono);padding:4px 6px;border-radius:6px;border:1px solid var(--line);text-align:center;min-width:34px}
+  .sp i{display:block;font:400 10px/1.2 var(--mono);font-style:normal;opacity:.8}
+  .sp.good{color:var(--teal);border-color:rgba(79,209,179,.5)} .sp.ok{color:var(--blue)}
+  .sp.bad{color:var(--danger);border-color:rgba(255,107,107,.45)}
+  .stx{font:13px/1.7 var(--mono);color:var(--ink)} .stx .chg{color:var(--gold);font-weight:700;text-decoration:underline}
+  .stx td{padding:0 10px 0 0;white-space:nowrap}
+  .verdict{font-weight:700} .verdict.kept{color:var(--teal)} .verdict.reverted{color:var(--danger)}
+  .rs{font:12px/1.7 var(--mono)} .rs.best{color:var(--teal);font-weight:700}
   .bgrid .bg{font:700 12px/1 var(--mono);padding:6px 8px;border-radius:7px;border:1px solid var(--line);
     background:#0c0d14;color:var(--muted)}
   .bgrid .bg.hit{border-color:rgba(79,209,179,.55);color:var(--teal);background:rgba(79,209,179,.08)}
@@ -527,9 +541,29 @@
         </div>
         <div class="row">
           <button class="act gold" id="b_bigram">✦ Refine with pairs</button>
+          <button class="act" id="b_step">▸ Step through it</button>
           <button class="act" id="b_undo">Undo pass</button>
         </div>
         <div class="meter" id="b_bg"></div>
+        <div class="stepbox" id="b_stepbox" hidden>
+          <p style="margin:0">The search is a loop of tiny experiments: <b>exchange two letters, re-score, keep the exchange only if the score went up.</b> Each press below runs one experiment on the real board.</p>
+          <div class="tlabel" style="margin-top:10px">The score <span>— how English do the pairs look?</span></div>
+          <p style="margin:4px 0 0">Every pair gets a number for how often English follows the first letter with the second: about <b>−1</b> for very common, about <b>−9</b> for almost never. Add them up; <b>higher (closer to zero) means more English.</b> The first pairs of the current text:</p>
+          <div class="sps" id="st_pairs"></div>
+          <div class="meter" id="st_score"></div>
+          <div class="tlabel" style="margin-top:10px">This experiment</div>
+          <div id="st_trial">Press <b>Next swap</b> to try the first exchange.</div>
+          <div class="meter" id="st_status"></div>
+          <div class="row">
+            <button class="act gold" id="st_next">Next swap</button>
+            <button class="act" id="st_nextkept">Next kept swap</button>
+            <button class="act" id="st_pass">Finish this pass</button>
+            <button class="act" id="st_climb">Climb to the top</button>
+            <button class="act gold" id="st_restarts" hidden>Try 7 more starting points</button>
+            <button class="act" id="st_close">Close</button>
+          </div>
+          <div id="st_restartlist"></div>
+        </div>
 
         <div class="tlabel" style="margin-top:14px">Your most common pairs <span>— green ones are common in English too</span></div>
         <div class="bgrid" id="b_pairs"></div>
@@ -1752,16 +1786,19 @@ function makeBigrams(texts){
   /* One climb stops at the first arrangement it cannot improve, which is often the
      wrong one. Restarting from shuffled positions and keeping the best escapes most
      of those dead ends — it is the difference between 23% and 100% on a long message. */
+  function shuffleFree(pm,frozen){         // shuffle only what is not pinned
+    const free=[];for(let c=0;c<26;c++)if(!frozen[c])free.push(c);
+    for(let i=free.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1)),a=free[i],b=free[j];
+      const t=pm[a];pm[a]=pm[b];pm[b]=t;
+    }
+  }
   function search(pm0,restarts){
     const frozen=frozenMask();
-    const free=[];for(let c=0;c<26;c++)if(!frozen[c])free.push(c);
     let bestPm=Int8Array.from(pm0),bestScore=-Infinity,passes=0;
     for(let r=0;r<restarts;r++){
       const pm=Int8Array.from(pm0);
-      for(let i=free.length-1;r>0&&i>0;i--){            // shuffle only what is not pinned
-        const j=Math.floor(Math.random()*(i+1)),a=free[i],b=free[j];
-        const t=pm[a];pm[a]=pm[b];pm[b]=t;
-      }
+      if(r>0)shuffleFree(pm,frozen);
       const res=climb(pm,frozen);passes+=res.passes;
       if(res.score>bestScore){bestScore=res.score;bestPm=Int8Array.from(pm);}
     }
@@ -2100,6 +2137,7 @@ function makeBigrams(texts){
   const unlock=n=>cryptlab.unlockTab(n===2?2:3);
 
   function touched(){
+    stepEnd();
     syncPool();acc.textContent='';showFit();showPairs();buildSuggest();
     if(stage===3)buildCribWords();
   }
@@ -2303,7 +2341,7 @@ function makeBigrams(texts){
     });
   }
   function loadMsg(i){
-    active=i;ta.value=encWith(MESSAGES[i].spec,MESSAGES[i].plain);
+    active=i;ta.value=encWith(MESSAGES[i].spec,MESSAGES[i].plain);stepEnd();
     map={};pinned.clear();sel=null;undoState=null;acc.textContent='';
     cribSel=null;candsEl.innerHTML='';cMeter.textContent='';
     buildBigrams(i);buildPairs();
@@ -2342,23 +2380,171 @@ function makeBigrams(texts){
     if(!pairA.length){bgMeter.textContent='No ciphertext to work on.';return;}
     const before=Object.assign({},map);
     undoState={map:before,pins:[...pinned]};
+    stepEnd();
     const pm0=completeMap(), fit0=fitPct(pm0);
     const res=search(pm0,8);
-    for(const L of order) map[L]=String.fromCharCode(65+res.pm[L.charCodeAt(0)-65]);
+    reportPass(before,fit0,res.pm,res.restarts);
+  };
+  function reportPass(before,fit0,pm,restarts){   // put a finished search on the board and say what it did
+    for(const L of order) map[L]=String.fromCharCode(65+pm[L.charCodeAt(0)-65]);
     let changed=0;for(const L of order) if(before[L]!==map[L]) changed++;
     for(const L of order)paintSlot(L);
     paintOut();syncPool();sel=null;markSel();showPairs();buildSuggest();
     const fit1=fitPct(completeMap());
     let msg='Pair pass: fit <b>'+fit0+'</b> → <b class="'+(fit1<35?'bad':fit1<60?'warn':fit1<82?'ok':'good')+'">'+fit1+
-      '</b> · moved <b>'+changed+'</b> letter'+(changed===1?'':'s')+' · searched '+res.restarts+
+      '</b> · moved <b>'+changed+'</b> letter'+(changed===1?'':'s')+' · searched '+restarts+
       ' starting points · kept your '+pinned.size+' pinned';
     if(active>=0) msg+='<br>'+scoreLine(correctCount(order),order.length,'Now');
     msg+='<br>Read the plaintext. Drag a fix onto any letter that is wrong — it pins — then run this again. '+
       '<b>Tab ⑤ Cribs is now unlocked</b> for when the statistics run out.';
     bgMeter.innerHTML=msg;
     unlock(3);
+  }
+
+  /* ---------- the same search, one experiment at a time ----------
+     Mirrors climb() exactly: same pair order, same keep rule, same 12-pass cap.
+     Swaps of two letters that sit in no pair are skipped — they cannot move the
+     score, so climb() always puts them back, and showing them would only be noise. */
+  const stepbox=document.getElementById('b_stepbox'), stTrialEl=document.getElementById('st_trial'),
+    stStatus=document.getElementById('st_status'), stScore=document.getElementById('st_score'),
+    stPairs=document.getElementById('st_pairs'), stRestartBtn=document.getElementById('st_restarts'),
+    stList=document.getElementById('st_restartlist');
+  let ST=null;
+  const stStepBtns=['st_next','st_nextkept','st_pass','st_climb'].map(id=>document.getElementById(id));
+  const chr=i=>String.fromCharCode(65+i), low=i=>String.fromCharCode(97+i);
+  function lpClass(lp){return lp>-2.5?'good':lp>-4.5?'ok':'bad';}
+  function oneIn(lp){const n=Math.exp(-lp);return n<10?n.toFixed(1).replace(/\.0$/,''):Math.round(n).toLocaleString('en');}
+  function stepEnd(){ST=null;stepbox.hidden=true;}
+  function stShow(pm){
+    for(const L of order) map[L]=chr(pm[L.charCodeAt(0)-65]);
+    for(const L of order)paintSlot(L);
+    paintOut();syncPool();
+  }
+  function stScoreCard(){
+    const pm=ST.pm,n=pairA.length,tot=ST.best;
+    stPairs.innerHTML='';
+    for(let k=0;k<Math.min(n,14);k++){
+      const x=pm[pairA[k]],y=pm[pairB[k]],lp=LOGP[x*26+y],d=document.createElement('span');
+      d.className='sp '+lpClass(lp);d.dataset.lp=lp.toFixed(3);
+      d.title='English follows '+chr(x)+' with '+chr(y)+' about 1 time in '+oneIn(lp);
+      d.innerHTML=low(x)+low(y)+'<i>'+lp.toFixed(1)+'</i>';
+      stPairs.appendChild(d);
+    }
+    stScore.innerHTML='Score now: <b>'+tot.toFixed(1)+'</b> over all '+n+' pairs = <b>'+(tot/n).toFixed(2)+
+      '</b> per pair → fit <b>'+fitPct(pm)+' / 100</b> (0 = random letters, 100 = as English as real text)';
+  }
+  function stNextPair(){
+    let a=ST.a,b=ST.b;
+    for(;;){
+      if(++b>=26){ if(++a>=25) return false; b=a+1; }
+      if(ST.frozen[a]||ST.frozen[b]) continue;
+      if(!ST.live[a]&&!ST.live[b]) continue;
+      ST.a=a;ST.b=b;return true;
+    }
+  }
+  function stTrial(){
+    if(ST.done) return null;
+    while(!stNextPair()){
+      if(!ST.moved||ST.pass>=12){ST.done=true;return null;}
+      ST.pass++;ST.moved=false;ST.a=0;ST.b=0;
+    }
+    const pm=ST.pm,a=ST.a,b=ST.b,before=ST.best,prev=Int8Array.from(pm);
+    let t=pm[a];pm[a]=pm[b];pm[b]=t;
+    const after=scoreMap(pm),kept=after>before+1e-9;
+    if(kept){ST.best=after;ST.moved=true;ST.kept++;}
+    else{t=pm[a];pm[a]=pm[b];pm[b]=t;}
+    ST.trials++;
+    return {a,b,before,after,kept,prev};
+  }
+  function stRender(tr){
+    stScoreCard();
+    if(tr){
+      const {a,b,prev}=tr, sw=Int8Array.from(prev);sw[a]=prev[b];sw[b]=prev[a];
+      const ca=chr(a),cb=chr(b);
+      // a few words that contain either letter, read both ways
+      const words=[],seen=new Set();
+      for(const w of ta.value.toUpperCase().split(/[^A-Z]+/)){
+        if(w&&!seen.has(w)&&(w.includes(ca)||w.includes(cb))){seen.add(w);words.push(w);if(words.length===3)break;}
+      }
+      const read=(w,m)=>[...w].map(ch=>{const c=ch.charCodeAt(0)-65,v=low(m[c]);
+        return (c===a||c===b)?'<span class="chg">'+v+'</span>':v;}).join('');
+      // which pairs the exchange actually changes, grouped and ranked by effect
+      const grp={};
+      for(let k=0;k<pairA.length;k++){
+        const p=pairA[k],q=pairB[k];
+        if(p!==a&&p!==b&&q!==a&&q!==b)continue;
+        const o=prev[p]*26+prev[q],nw=sw[p]*26+sw[q],key=o+':'+nw;
+        (grp[key]||(grp[key]={o,nw,n:0})).n++;
+      }
+      const rows=Object.values(grp).map(g=>({...g,d:g.n*(LOGP[g.nw]-LOGP[g.o])}))
+        .sort((x,y)=>Math.abs(y.d)-Math.abs(x.d)).slice(0,4);
+      const pr=i=>low(Math.floor(i/26))+low(i%26);
+      const delta=tr.after-tr.before;
+      stTrialEl.dataset.a=ca;stTrialEl.dataset.b=cb;
+      stTrialEl.dataset.before=tr.before;stTrialEl.dataset.after=tr.after;
+      stTrialEl.dataset.verdict=tr.kept?'kept':'reverted';
+      stTrialEl.innerHTML='Exchange <b>'+low(prev[a])+'</b> ↔ <b>'+low(prev[b])+'</b>'+
+        ' <span style="opacity:.7">(cipher '+ca+' and '+cb+')</span>'+
+        '<table class="stx">'+words.map(w=>'<tr><td>'+read(w,prev)+'</td><td>→ '+read(w,sw)+'</td></tr>').join('')+'</table>'+
+        '<div>Pairs it changes:</div><table class="stx">'+rows.map(g=>
+          '<tr><td>'+pr(g.o)+' → '+pr(g.nw)+' ×'+g.n+'</td><td>'+LOGP[g.o].toFixed(1)+' → '+LOGP[g.nw].toFixed(1)+
+          '</td><td>'+(g.d>=0?'+':'')+g.d.toFixed(1)+'</td></tr>').join('')+'</table>'+
+        '<div>Score <b>'+tr.before.toFixed(1)+'</b> → <b>'+tr.after.toFixed(1)+'</b> ('+(delta>=0?'+':'')+delta.toFixed(1)+') · '+
+        (tr.kept?'<span class="verdict kept">Kept ✓ — the text reads more like English</span>'
+                :'<span class="verdict reverted">Put back ✗ — '+(Math.abs(delta)<1e-9?'no better':'less English')+'</span>')+'</div>';
+    }
+    const pins=pinned.size?' · your '+pinned.size+' pinned letter'+(pinned.size===1?' is':'s are')+' never tried':'';
+    if(ST.done){
+      stStatus.innerHTML='Reached a <b>peak</b> after '+ST.pass+' pass'+(ST.pass===1?'':'es')+' ('+ST.trials+' swaps tried, '+ST.kept+
+        ' kept): no single swap improves the score. That is where one climb stops — which is not always the right answer.'+pins;
+      stRestartBtn.hidden=false;
+    } else {
+      stStatus.innerHTML='Pass '+ST.pass+' · '+ST.trials+' swaps tried · '+ST.kept+' kept'+pins+
+        '<br>A pass tries every pair of letters once; the climb repeats passes until one changes nothing.';
+    }
+  }
+  function stRun(stop){                    // run trials until stop(trial) says so; show the last
+    let last=null,tr;
+    while((tr=stTrial())){last=tr;if(stop(tr))break;}
+    stShow(ST.pm);stRender(last);
+  }
+  document.getElementById('b_step').onclick=()=>{
+    if(!pairA.length){bgMeter.textContent='No ciphertext to work on.';return;}
+    undoState={map:Object.assign({},map),pins:[...pinned]};
+    const pm0=completeMap(),live=new Uint8Array(26);
+    for(let k=0;k<pairA.length;k++){live[pairA[k]]=1;live[pairB[k]]=1;}
+    ST={pm0,pm:Int8Array.from(pm0),frozen:frozenMask(),live,before:Object.assign({},map),fit0:fitPct(pm0),
+      best:scoreMap(pm0),a:0,b:0,pass:1,moved:false,trials:0,kept:0,done:false};
+    stepbox.hidden=false;stRestartBtn.hidden=true;stList.innerHTML='';
+    for(const b of stStepBtns)b.hidden=false;
+    stTrialEl.innerHTML='Press <b>Next swap</b> to try the first exchange.';
+    for(const k of ['a','b','before','after','verdict'])delete stTrialEl.dataset[k];
+    stShow(ST.pm);stRender(null);
+  };
+  document.getElementById('st_next').onclick=()=>stRun(()=>true);
+  document.getElementById('st_nextkept').onclick=()=>stRun(tr=>tr.kept);
+  document.getElementById('st_pass').onclick=()=>{const p=ST.pass;stRun(()=>ST.pass!==p||ST.done);};
+  document.getElementById('st_climb').onclick=()=>stRun(()=>false);
+  document.getElementById('st_close').onclick=stepEnd;
+  stRestartBtn.onclick=()=>{
+    const runs=[{pm:Int8Array.from(ST.pm),score:ST.best,label:'your climb, from the frequency guess'}];
+    for(let r=1;r<8;r++){
+      const pm=Int8Array.from(ST.pm0);shuffleFree(pm,ST.frozen);
+      runs.push({pm,score:climb(pm,ST.frozen).score,label:'climb from a shuffled start'});
+    }
+    let bi=0;runs.forEach((r,i)=>{if(r.score>runs[bi].score)bi=i;});
+    stList.innerHTML='<div class="tlabel" style="margin-top:12px">Eight climbs <span>— Refine with pairs runs exactly this, then keeps the best</span></div>'+
+      runs.map((r,i)=>'<div class="rs'+(i===bi?' best':'')+'" data-fit="'+fitPct(r.pm)+'">#'+(i+1)+' · fit '+fitPct(r.pm)+
+        ' / 100 · score '+r.score.toFixed(1)+' · '+r.label+(i===bi?' ← kept':'')+'</div>').join('')+
+      '<p style="margin:6px 0 0">Different starts reach different peaks. Keeping the highest escapes most dead ends — but a high score is still only statistics. Read the plaintext.</p>';
+    stRestartBtn.hidden=true;
+    for(const b of stStepBtns)b.hidden=true;              // the board now holds the winner, not the climb we were stepping
+    ST.pm=runs[bi].pm;ST.best=runs[bi].score;stScoreCard();
+    const {before,fit0}=ST;
+    reportPass(before,fit0,runs[bi].pm,runs.length);
   };
   document.getElementById('b_undo').onclick=()=>{
+    stepEnd();
     if(!undoState){bgMeter.textContent='Nothing to undo.';return;}
     map=Object.assign({},undoState.map);
     pinned.clear();undoState.pins.forEach(L=>pinned.add(L));
@@ -2367,13 +2553,14 @@ function makeBigrams(texts){
     paintOut();syncPool();markSel();showFit();showPairs();buildSuggest();
   };
   document.getElementById('b_reset').onclick=()=>{
+    stepEnd();
     undoState={map:Object.assign({},map),pins:[...pinned]};
     map={};pinned.clear();sel=null;acc.textContent='';
     for(const L of order)paintSlot(L);
     paintOut();syncPool();markSel();showFit();showPairs();buildSuggest();
   };
   ta.oninput=()=>{
-    active=-1;markPicker();map={};pinned.clear();sel=null;undoState=null;acc.textContent='';
+    active=-1;markPicker();map={};pinned.clear();sel=null;undoState=null;acc.textContent='';stepEnd();
     buildBigrams(-1);buildPairs();
     buildHist();buildOut();syncPool();markSel();showFit();showPairs();buildSuggest();
     sol.textContent='(pick one of the challenges above to reveal its solution)';

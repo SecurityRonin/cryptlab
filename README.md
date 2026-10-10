@@ -66,7 +66,7 @@ There is no Shor mode, and the page says why: Shor is not a cipher. It's the onl
 - **20 challenges across four length bands** — 3 long (~700–800 letters), 5 medium (~310–370), 8 short (~37–130) and 4 very short (~25–32), so the *same* method visibly succeeds at the top of the list and fails at the bottom.
 - **Three tools, in the order codebreakers actually reached for them:**
   - **② single letters** — rank the counts against English; scores itself against the answer key.
-  - **④ letter pairs** — scores your decryption on bigram statistics, offers draggable **two-letter blocks** (`GR → th`) that place both letters at once, and hill-climbs with random restarts.
+  - **④ letter pairs** — scores your decryption on bigram statistics, offers draggable **two-letter blocks** (`GR → th`) that place both letters at once, and hill-climbs with random restarts. **Step through it** replays that search one experiment at a time on the live board: each pair's score, each trial swap with the pairs it changes and the score before and after, kept or put back, then the eight restarts side by side. A test checks the walkthrough lands on exactly the board the real search reaches.
   - **⑤ cribs** — CBW's probable-word attack. Cipher words are ranked by how **decisive** they are (fewest surviving candidates first), candidates must share the word's letter pattern, and a candidate that would make the text *less* English is flagged amber rather than hidden.
 - **Human in the loop.** Anything you place by hand is **pinned** (gold dot) and neither the pair search nor a crib will overrule it. Read the output, drag a correction, run it again — the Crypt Breaker's Workbench loop.
 - A guided walkthrough that adapts to the challenge you picked, plus expandable history: Al-Kindi, Mary Queen of Scots, the Zimmermann Telegram, CBW, and harvest-now-decrypt-later under Shor's algorithm.
@@ -105,7 +105,7 @@ Nothing here simulates a quantum computer. Faking that would fabricate the one t
 ## Tech Stack
 
 - **Frontend:** Single `web/index.html` — vanilla HTML/CSS/JS, no build step, no frameworks
-- **Testing:** [Playwright](https://playwright.dev/) — 82 end-to-end tests covering the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
+- **Testing:** [Playwright](https://playwright.dev/) — 100 end-to-end tests covering the step-by-step pair search, the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
   ```bash
   npx playwright test                                                  # local
   BASE_URL=https://securityronin-cryptlab.netlify.app npx playwright test   # against production

@@ -33,6 +33,7 @@ test.describe('④ Pair search, step by step', () => {
         expect(lps.length).toBeGreaterThan(5);
         for (const lp of lps) expect(lp).toBeLessThan(0);   // a log-probability is never positive
         await expect(page.locator('#st_score')).toContainText('fit');
+        await expect(page.locator('#st_restarts')).toBeHidden();   // only once the climb has peaked
     });
 
     test('a swap is kept exactly when it raises the score, and only then changes the text', async ({ page }) => {
@@ -79,6 +80,9 @@ test.describe('④ Pair search, step by step', () => {
         expect(best).toBe(Math.max(...fits));
         await expect(page.locator('#b_bg')).toContainText(`${best}`);
         await expect(page.locator('#seg button[data-t="3"]')).not.toHaveClass(/lock/);
+        // the board now holds the winning climb, so stepping the old one would be stale
+        await expect(page.locator('#st_next')).toBeHidden();
+        await expect(page.locator('#st_score')).toContainText(`fit ${best} / 100`);
     });
 
     test('Undo after stepping restores the board', async ({ page }) => {
