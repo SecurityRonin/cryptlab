@@ -73,3 +73,34 @@ test.describe('⑤ Cribs — ranked shortlist for the selected word', () => {
         }
     });
 });
+
+/* The shortlist can only offer words the dictionary knows. With a 250-word
+   starter list, most cipher words never offered the right answer at all. */
+test.describe('⑤ Cribs — the dictionary knows ordinary English', () => {
+    test('the right word is on the shortlist for most cipher words worth attacking', async ({ page }) => {
+        await page.goto('/');
+        await page.click('#seg button[data-t="1"]');
+        await page.locator('#picker button', { hasText: 'Al-Kindi' }).click();
+        await page.click('#b_guess');
+        await page.click('#seg button[data-t="2"]');
+        await page.click('#b_bigram');
+        await page.click('#seg button[data-t="3"]');
+
+        // the true reading of each cipher word, from the challenge's own answer key
+        const c = (await page.locator('#b_in').inputValue()).toUpperCase().split(/[^A-Z]+/).filter(Boolean);
+        const p = (await page.locator('#b_solution').textContent()).toUpperCase().split(/[^A-Z]+/).filter(Boolean);
+        expect(c.length).toBe(p.length);
+        const truth = Object.fromEntries(c.map((w, i) => [w, p[i]]));
+
+        const words = await page.locator('#c_words .cword').evaluateAll((bs) => bs.map((b) => b.dataset.w));
+        let found = 0;
+        for (const w of words) {
+            await page.locator(`#c_words .cword[data-w="${w}"]`).click();
+            const offered = await page.locator('#c_ranked .crow').evaluateAll((rs) => rs.map((r) => r.dataset.pw));
+            if (offered.includes(truth[w])) found++;
+        }
+        expect(words.length).toBeGreaterThan(5);
+        expect(found / words.length).toBeGreaterThanOrEqual(0.75);
+    });
+});
+
