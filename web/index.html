@@ -828,6 +828,7 @@
   </footer>
 </div>
 
+<script src="cribwords.js"></script>
 <script>
 /* ================= segmented nav ================= */
 /* The tab strip is the spine of the lesson, so it also owns which substitution
@@ -946,7 +947,7 @@ const CORPUS=
 /* Dictionary for the crib tool: ordinary common English, plus words a codebreaker
    would reasonably EXPECT in military or diplomatic traffic. Guessing the content
    is the whole technique — that is what a crib is. */
-const CRIBWORDS=("the of and to in is you that it he was for on are as with his they at be this have from or one "+
+const CRIBBASE=("the of and to in is you that it he was for on are as with his they at be this have from or one "+
 "had by but not what all were we when your can said there use an each which she do how their if will up other "+
 "about out many then them these so some her would make like him into time has look two more write go see number "+
 "no way could people my than first water been call who its now find long down day did get come made may part "+
@@ -959,6 +960,11 @@ const CRIBWORDS=("the of and to in is you that it he was for on are as with his 
 "attack orders report weather stop station command signal captured broken alphabet frequency english german "+
 "british soldier general night morning key code war army navy ship convoy position immediately request confirm "+
 "nothing anyone secrets system security problems human element").split(/\s+/).map(w=>w.toUpperCase());
+/* The bulk of the dictionary is SCOWL's ~11k commonest words (cribwords.js). The
+   starter list above stays for the traffic words a codebreaker would EXPECT. */
+const CRIBDICT_OK=typeof self.CRIB_DICT==='string'&&self.CRIB_DICT.length>10000;
+if(!CRIBDICT_OK)console.error('cribwords.js did not load: crib candidates are limited to the 250-word starter list');
+const CRIBWORDS=[...new Set(CRIBBASE.concat(CRIBDICT_OK?self.CRIB_DICT.split(' '):[]))];
 const CRIBSET=new Set(CRIBWORDS);
 
 /* Letter-pair statistics over a set of reference texts. Pairs never straddle a
@@ -1905,6 +1911,9 @@ function makeBigrams(texts){
     for(const c of w){ if(!(c in m))m[c]=String.fromCharCode(65+n++); o+=m[c]; }
     return o;                                   // GUUJ -> ABBC: the shape a word cannot hide
   }
+  const CRIBPAT=new Map();                      // shape -> words, so a lookup never scans all 11k
+  for(const w of CRIBWORDS){const k=patOf(w);(CRIBPAT.get(k)||CRIBPAT.set(k,[]).get(k)).push(w);}
+  const samePat=w=>CRIBPAT.get(patOf(w))||[];
   function allWords(){
     const seen=new Map();
     for(const w of ta.value.toUpperCase().split(/[^A-Z]+/)) if(w.length>=2) seen.set(w,(seen.get(w)||0)+1);
@@ -1915,7 +1924,7 @@ function makeBigrams(texts){
      end, however many repeated letters it has. */
   function cribWords(){
     const out=allWords().filter(o=>o.w.length>=3);
-    out.forEach(o=>{o.cands=CRIBWORDS.reduce((n,d)=>n+(fits(o.w,d)?1:0),0);});
+    out.forEach(o=>{o.cands=samePat(o.w).reduce((n,d)=>n+(fits(o.w,d)?1:0),0);});
     return out
       .sort((a,b)=>{
         if(!a.cands!==!b.cands)return a.cands?-1:1;       // anything beats a dead end
@@ -1969,7 +1978,7 @@ function makeBigrams(texts){
   }
   function candidatesFor(W){
     const out=[];
-    for(const d of CRIBWORDS){
+    for(const d of samePat(W)){
       const add=fits(W,d);
       if(!add)continue;
       out.push({cw:W,pw:d,add,gain:gainOf(add),fit:fitWith(Object.assign({},map,add))});
@@ -2221,6 +2230,7 @@ function makeBigrams(texts){
     candsEl.hidden=(n!==3);
     rackT.textContent=n===2?'Tool ④ · suggested pairs':'Tool ⑤ · candidate words';
     rackN.textContent=n===2?'drag a block onto the bars':'drag a word onto the bars';
+    if(n===3&&!CRIBDICT_OK)cMeter.innerHTML='<b class="warn">The full word list did not load</b> — candidates come from a 250-word starter list only. Reload the page.';
     if(n===3){buildCribWords();if(!candsEl.children.length&&!cMeter.textContent)
       cMeter.innerHTML='Pick a cipher word above. Words with <b>repeated letters</b> narrow the field fastest.';}
   }

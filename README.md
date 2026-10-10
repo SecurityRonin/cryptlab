@@ -67,7 +67,7 @@ There is no Shor mode, and the page says why: Shor is not a cipher. It's the onl
 - **Three tools, in the order codebreakers actually reached for them:**
   - **② single letters** — rank the counts against English; scores itself against the answer key.
   - **④ letter pairs** — scores your decryption on bigram statistics, offers draggable **two-letter blocks** (`GR → th`) that place both letters at once, and hill-climbs with random restarts. **Step through it** replays that search one experiment at a time on the live board: each pair's score, each trial swap with the pairs it changes and the score before and after, kept or put back, then the eight restarts side by side. A test checks the walkthrough lands on exactly the board the real search reaches.
-  - **⑤ cribs** — CBW's probable-word attack. Cipher words are ranked by how **decisive** they are (fewest surviving candidates first), candidates must share the word's letter pattern, and a candidate that would make the text *less* English is flagged amber rather than hidden. Selecting a word lists its ten best candidates, most English first, each placed with one click — or type your own guess for that word and the lab says plainly if its length or letter pattern cannot fit.
+  - **⑤ cribs** — CBW's probable-word attack, against an ~11,000-word dictionary (SCOWL's commonest English words plus a starter list of words a codebreaker would expect in military traffic). Cipher words are ranked by how **decisive** they are (fewest surviving candidates first), candidates must share the word's letter pattern, and a candidate that would make the text *less* English is flagged amber rather than hidden. Selecting a word lists its ten best candidates, most English first, each placed with one click — or type your own guess for that word and the lab says plainly if its length or letter pattern cannot fit.
 - **Human in the loop.** Anything you place by hand is **pinned** (gold dot) and neither the pair search nor a crib will overrule it. Read the output, drag a correction, run it again — the Crypt Breaker's Workbench loop.
 - A guided walkthrough that adapts to the challenge you picked, plus expandable history: Al-Kindi, Mary Queen of Scots, the Zimmermann Telegram, CBW, and harvest-now-decrypt-later under Shor's algorithm.
 
@@ -78,17 +78,17 @@ Measured across all 20 substitution challenges (`npx playwright test tests/measu
 | Band | Letters | ② single letters | ④ letter pairs | ⑤ + cribs |
 |---|---|---|---|---|
 | Long | 697–812 | 21–33% | 92–100% | 92–100% |
-| Medium | 313–371 | 21–39% | 35–100% | 17–100% |
-| Short | 37–127 | 5–33% | 0–61% | up to **95%** |
-| Very short | 25–32 | 0–15% | 0–20% | up to **67%** |
+| Medium | 313–371 | 21–39% | 43–100% | 83–100% |
+| Short | 37–127 | 5–33% | 0–75% | up to **100%** |
+| Very short | 25–32 | 0–15% | 0–33% | up to **87%** |
 
 Three findings, all kept as lessons rather than smoothed away:
 
 - **Counting single letters never solves anything** — not even an 800-letter passage. That is precisely why later tools had to be invented.
 - **On very short messages the pair search reports a fit of 100 out of 100 while getting nearly every letter wrong.** With that few pairs, many mappings fit the statistics equally well, so the tool is maximally confident and useless. Read the plaintext, not the score.
-- **Cribs rescue what statistics cannot** — the short Kerckhoffs message goes 20 → 40–55 → 95%, Mitnick 27 → 27–33 → 67–80%, the Weather signal 7 → 0–20 → 27–67% — but a *wrong* crib is catastrophic, wiping a solved board outright. Hence the amber flag, and hence the human staying in the loop.
+- **Cribs rescue what statistics cannot** — the short Kerckhoffs message goes 20 → 35–75 → up to 100%, Snowden 20 → 10–25 → 25–55%, the Weather signal 7 → 7–33 → 27–87% — but a *wrong* crib is catastrophic: on "Secrets" the harness, which blindly takes the top suggestion, drops a 61% board to 39%. Hence the amber flag, and hence the human staying in the loop.
 
-Tool ④ uses random restarts, so its figures move between runs — on a medium message one unlucky run can stall at 35% where the others reach 100% — and the table quotes ranges observed over three runs, not a single seeded draw.
+Tool ④ uses random restarts, so its figures move between runs — on a medium message one unlucky run can stall at 43% where the others reach 100% — and the table quotes ranges observed over three runs, not a single seeded draw.
 
 Challenge keys are keyword alphabets that continue from the keyword's last letter, and a test holds every key to at most two letters that encrypt to themselves. The naive restart-at-A construction left the end of the alphabet untouched — one key kept 18 letters as themselves.
 
@@ -106,8 +106,8 @@ Nothing here simulates a quantum computer. Faking that would fabricate the one t
 
 ## Tech Stack
 
-- **Frontend:** Single `web/index.html` — vanilla HTML/CSS/JS, no build step, no frameworks
-- **Testing:** [Playwright](https://playwright.dev/) — 112 end-to-end tests covering the step-by-step pair search, the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
+- **Frontend:** `web/index.html` — vanilla HTML/CSS/JS, no build step, no frameworks — plus `web/cribwords.js`, the crib dictionary, regenerated from SCOWL by `tools/build-cribwords.mjs`
+- **Testing:** [Playwright](https://playwright.dev/) — 116 end-to-end tests covering the step-by-step pair search, the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
   ```bash
   npx playwright test                                                  # local
   BASE_URL=https://securityronin-cryptlab.netlify.app npx playwright test   # against production
@@ -128,6 +128,8 @@ python3 -m http.server 3009 --directory web
 ```
 
 ## Attribution
+
+The crib dictionary is derived from [SCOWL](http://wordlist.aspell.net/) 2020.12.07, Copyright 2000-2018 by Kevin Atkinson; the full notice is in [`web/cribwords-COPYRIGHT.txt`](web/cribwords-COPYRIGHT.txt).
 
 Frequency analysis was first described by **Abu Yusuf Ya'qub ibn Ishaq al-Kindi** in 9th-century Baghdad. The Caesar cipher is named for its use by Julius Caesar; the Vigenère cipher is named for Blaise de Vigenère.
 

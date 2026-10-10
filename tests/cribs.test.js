@@ -104,3 +104,14 @@ test.describe('⑤ Cribs — the dictionary knows ordinary English', () => {
     });
 });
 
+test('if the word list fails to load, the crib tool says so instead of quietly shrinking', async ({ page }) => {
+    await page.route('**/cribwords.js', (r) => r.abort());
+    await page.goto('/');
+    await page.click('#seg button[data-t="1"]');
+    await page.click('#b_guess');
+    await page.click('#seg button[data-t="2"]');
+    await page.click('#b_bigram');
+    await page.click('#seg button[data-t="3"]');
+    await expect(page.locator('#c_meter')).toContainText('did not load');
+});
+
