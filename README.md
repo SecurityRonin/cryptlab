@@ -77,18 +77,20 @@ Measured across all 20 substitution challenges (`npx playwright test tests/measu
 
 | Band | Letters | ② single letters | ④ letter pairs | ⑤ + cribs |
 |---|---|---|---|---|
-| Long | 697–812 | 21–29% | 92–100% | 92–100% |
-| Medium | 313–371 | 17–39% | 83–100% | 83–100% |
+| Long | 697–812 | 21–33% | 92–100% | 92–100% |
+| Medium | 313–371 | 21–39% | 35–100% | 17–100% |
 | Short | 37–127 | 5–33% | 0–61% | up to **95%** |
-| Very short | 25–32 | 0–15% | 0–35% | up to **67%** |
+| Very short | 25–32 | 0–15% | 0–20% | up to **67%** |
 
 Three findings, all kept as lessons rather than smoothed away:
 
 - **Counting single letters never solves anything** — not even an 800-letter passage. That is precisely why later tools had to be invented.
 - **On very short messages the pair search reports a fit of 100 out of 100 while getting nearly every letter wrong.** With that few pairs, many mappings fit the statistics equally well, so the tool is maximally confident and useless. Read the plaintext, not the score.
-- **Cribs rescue what statistics cannot** — Kerckhoffs 30 → 50 → 95%, Schneier 5 → 10 → 71%, the Weather signal 7 → 13 → 67% — but a *wrong* crib is catastrophic, wiping a solved board outright. Hence the amber flag, and hence the human staying in the loop.
+- **Cribs rescue what statistics cannot** — the short Kerckhoffs message goes 20 → 40–55 → 95%, Mitnick 27 → 27–33 → 67–80%, the Weather signal 7 → 0–20 → 27–67% — but a *wrong* crib is catastrophic, wiping a solved board outright. Hence the amber flag, and hence the human staying in the loop.
 
-Tool ④ uses random restarts, so its figures move a few points between runs; the table quotes observed ranges, not a single seeded draw.
+Tool ④ uses random restarts, so its figures move between runs — on a medium message one unlucky run can stall at 35% where the others reach 100% — and the table quotes ranges observed over three runs, not a single seeded draw.
+
+Challenge keys are keyword alphabets that continue from the keyword's last letter, and a test holds every key to at most two letters that encrypt to themselves. The naive restart-at-A construction left the end of the alphabet untouched — one key kept 18 letters as themselves.
 
 ### ⑥ One-time pad, ⑦ RSA, ⑧ Shor
 
@@ -105,7 +107,7 @@ Nothing here simulates a quantum computer. Faking that would fabricate the one t
 ## Tech Stack
 
 - **Frontend:** Single `web/index.html` — vanilla HTML/CSS/JS, no build step, no frameworks
-- **Testing:** [Playwright](https://playwright.dev/) — 103 end-to-end tests covering the step-by-step pair search, the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
+- **Testing:** [Playwright](https://playwright.dev/) — 112 end-to-end tests covering the step-by-step pair search, the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
   ```bash
   npx playwright test                                                  # local
   BASE_URL=https://securityronin-cryptlab.netlify.app npx playwright test   # against production

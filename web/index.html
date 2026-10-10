@@ -112,6 +112,7 @@
   .disk text{font:600 12px/1 var(--mono);fill:var(--ink)}
   .disk .inner text{fill:var(--gold)}
   .disk .ring{transition:transform .35s cubic-bezier(.4,.1,.2,1)}
+  .disk{touch-action:none;cursor:grab} .disk.turning{cursor:grabbing} .disk.turning .ring{transition:none}
   .disk .mark{fill:var(--danger)}
   .disk circle{fill:none;stroke:var(--line)}
 
@@ -1009,6 +1010,17 @@ function makeBigrams(texts){
     rotorEl=document.getElementById('e_rotor'), rsaWrap=document.getElementById('e_rsawrap'),
     rsaKeysEl=document.getElementById('e_rsakeys'), rsaInfo=document.getElementById('e_rsainfo');
   let mode='caesar', shift=3, dir='enc', pad='', rsaKey=0, padShort=false;
+  const STEP=360/26;
+  let innerA=shift*STEP, outerA=0;           // ring angles in degrees; unbounded, so a turn never spins back
+  function paintDisk(){
+    document.getElementById('ringInner').setAttribute('transform','rotate('+innerA+')');
+    document.getElementById('ringOuter').setAttribute('transform','rotate('+outerA+')');
+  }
+  function syncShift(live){                  // live: mid-drag, so paint the rings and only re-render on a new shift
+    const s=((Math.round((innerA-outerA)/STEP))%26+26)%26;
+    if(live)paintDisk();
+    if(s!==shift||!live){shift=s;shiftEl.textContent=shift;render();}
+  }
   function ring(el,r){el.innerHTML='';for(let i=0;i<26;i++){const ang=i*360/26;
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('transform','rotate('+ang+') translate(0,'+(-r)+') rotate(180)');
@@ -1053,7 +1065,7 @@ function makeBigrams(texts){
     const enc=dir==='enc';carry=null;
     if(mode==='caesar'){
       out.textContent=caesar(inp.value,enc?shift:26-shift);
-      document.getElementById('ringInner').setAttribute('transform','rotate('+(shift*360/26)+')');
+      paintDisk();
     } else if(mode==='vig'){
       const k=keyEl.value;
       out.textContent=enc?vigenere(inp.value,k)
@@ -1105,8 +1117,30 @@ function makeBigrams(texts){
     rsaKeysEl.appendChild(b);
   });
   renderRsaInfo();syncControls();
-  document.getElementById('e_plus').onclick=()=>{shift=(shift+1)%26;shiftEl.textContent=shift;render();};
-  document.getElementById('e_minus').onclick=()=>{shift=(shift+25)%26;shiftEl.textContent=shift;render();};
+  document.getElementById('e_plus').onclick=()=>{innerA+=STEP;syncShift();};
+  document.getElementById('e_minus').onclick=()=>{innerA-=STEP;syncShift();};
+  /* Turn either ring by hand. The shift is how many letters the inner ring sits
+     clockwise of the outer one, so only the angle BETWEEN them matters. */
+  function ringAt(e){
+    const r=disk.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);
+    return {a:Math.atan2(x,-y)*180/Math.PI,d:Math.hypot(x,y)*200/r.width};   // viewBox units
+  }
+  let turning=null;
+  disk.addEventListener('pointerdown',e=>{
+    const p=ringAt(e);if(p.d<42||p.d>90)return;
+    turning={outer:p.d>66,last:p.a};disk.setPointerCapture(e.pointerId);disk.classList.add('turning');e.preventDefault();
+  });
+  disk.addEventListener('pointermove',e=>{
+    if(!turning)return;
+    const p=ringAt(e);let d=p.a-turning.last;if(d>180)d-=360;if(d<-180)d+=360;turning.last=p.a;
+    if(turning.outer)outerA+=d;else innerA+=d;
+    syncShift(true);
+  });
+  const endTurn=()=>{
+    if(!turning)return;turning=null;disk.classList.remove('turning');
+    innerA=Math.round(innerA/STEP)*STEP;outerA=Math.round(outerA/STEP)*STEP;syncShift();
+  };
+  disk.addEventListener('pointerup',endTurn);disk.addEventListener('pointercancel',endTurn);
   inp.oninput=render; keyEl.oninput=render; render();
 })();
 
@@ -1658,7 +1692,7 @@ function makeBigrams(texts){
      spec:{keyword:"WALSINGHAM"}},
     {band:'m', label:"Kerckhoffs's Principle", note:"1883",
      plain:"Auguste Kerckhoffs argued that a military cipher must remain secure even when the enemy knows every detail of how it works. Only the key may be secret. Hiding the method buys nothing, because methods always leak, through captured equipment, through deserters, or through simple carelessness. Every cipher in serious use today follows his rule: the algorithm is published and attacked by the whole world, while the key stays private.",
-     spec:{keyword:"DESIDERATA"}},
+     spec:{keyword:"DESIDERATUM"}},
     {band:'m', label:"Venona", note:"the archive that waited",
      plain:"For decades American cryptanalysts kept Soviet cables they could not read. The traffic used one time pads, which are unbreakable when the pad is genuinely used once, but a wartime supplier had duplicated pages. Years later that reuse let the Venona project read parts of messages sent in the nineteen forties. Collect first, decrypt later, and let one mistake by the enemy do the rest.",
      spec:{keyword:"ONETIMEPAD"}},
@@ -1672,7 +1706,7 @@ function makeBigrams(texts){
      spec:{keyword:"SURVEILLANCE"}},
     {band:'s', label:"Kerckhoffs", note:"the second rule",
      plain:"The system must not be required to be secret, and it must be able to fall into the hands of the enemy without inconvenience.",
-     spec:{keyword:"AUGUSTE"}},
+     spec:{keyword:"KERCKHOFFS"}},
     {band:'s', label:"Schneier", plain:"If you think technology can solve your security problems then you do not understand the problems.", spec:{keyword:"CIPHERTEXT"}},
     {band:'s', label:"Spafford", plain:"The only truly secure system is one that is powered off, unplugged, and locked in a titanium safe.", spec:{keyword:"FIREWALL"}},
     {band:'s', label:"Mitnick", plain:"The weakest link in the security chain is the human element.", spec:{keyword:"PHISHING"}},
@@ -1692,8 +1726,14 @@ function makeBigrams(texts){
     {band:'vs', label:"Funds", note:"banking cable",
      plain:"SEND FUNDS VIA ZURICH CONFIRM RECEIPT", spec:{keyword:"LEDGER"}}
   ];
+  /* Keyword first, then the rest of the alphabet continuing from the keyword's LAST
+     letter. Restarting at A instead leaves the tail in place — BAGHDAD kept I to Z as
+     themselves, so CENTURY enciphered to the half-readable GDNTURY. */
   function alphaFromKeyword(kw){kw=(kw||"").toUpperCase().replace(/[^A-Z]/g,"");
-    let seen=new Set(),out="";for(const c of kw+"ABCDEFGHIJKLMNOPQRSTUVWXYZ"){if(!seen.has(c)){seen.add(c);out+=c;}}return out;}
+    let seen=new Set(),out="";const st=kw?kw.charCodeAt(kw.length-1)-65:25;
+    for(let i=0;i<kw.length+26;i++){const c=i<kw.length?kw[i]:String.fromCharCode(65+(st+1+i-kw.length)%26);
+      if(!seen.has(c)){seen.add(c);out+=c;}}
+    return out;}
   function encWith(spec,plain){
     let alpha;
     if(spec.shift!=null){alpha="";for(let i=0;i<26;i++)alpha+=String.fromCharCode(65+(i+spec.shift)%26);}
