@@ -153,3 +153,47 @@ test.describe('Human in the loop — the machine does not answer first', () => {
         await expect(page.locator('#c_meter2')).toContainText('this is the key');
     });
 });
+
+/* The Caesar wheel turns like the real thing: drag either ring, and the shift
+   is how far the inner ring sits from the outer one. */
+async function turn(page, radius, letters) {
+    const box = await page.locator('#disk').boundingBox();
+    const cx = box.x + box.width / 2, cy = box.y + box.height / 2, k = box.width / 200;
+    const at = (deg) => {
+        const r = (deg * Math.PI) / 180;
+        return [cx + Math.sin(r) * radius * k, cy - Math.cos(r) * radius * k];
+    };
+    const start = 40, end = start + (letters * 360) / 26;
+    await page.mouse.move(...at(start));
+    await page.mouse.down();
+    for (let i = 1; i <= 12; i++) await page.mouse.move(...at(start + ((end - start) * i) / 12));
+    await page.mouse.up();
+}
+const innerAngle = (page) => page.locator('#ringInner').evaluate((g) => +g.getAttribute('transform').match(/rotate\(([-\d.e]+)\)/)[1]);
+
+test.describe('Encrypt — the Caesar wheel turns by hand', () => {
+    test.beforeEach(async ({ page }) => { await page.goto('/'); await page.locator('#disk').scrollIntoViewIfNeeded(); });
+
+    test('dragging the inner ring three letters clockwise adds three to the shift', async ({ page }) => {
+        await expect(page.locator('#e_shift')).toHaveText('3');
+        await turn(page, 54, 3);
+        await expect(page.locator('#e_shift')).toHaveText('6');
+        await expect(out(page)).toHaveText('SKKZ SK GZ SOJTOMNZ');
+    });
+
+    test('dragging the outer ring the other way also changes the shift', async ({ page }) => {
+        await turn(page, 78, -2);
+        await expect(page.locator('#e_shift')).toHaveText('5');
+    });
+
+    test('a released ring snaps to a whole letter, and the buttons still agree', async ({ page }) => {
+        await turn(page, 54, 1.4);
+        const step = 360 / 26, a = await innerAngle(page);
+        expect(Math.abs(a / step - Math.round(a / step))).toBeLessThan(1e-6);
+        await expect(page.locator('#e_shift')).toHaveText('4');
+        await page.click('#e_plus');
+        await expect(page.locator('#e_shift')).toHaveText('5');
+        await expect(out(page)).toHaveText('RJJY RJ FY RNISNLMY');
+    });
+});
+

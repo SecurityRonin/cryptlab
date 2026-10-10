@@ -120,6 +120,20 @@ test.describe('Break tab — challenge corpus', () => {
         await expect(page.locator('#b_meter')).toContainText('solid');
     });
 
+    // A keyword alphabet that restarts at A leaves the end of the alphabet in place:
+    // BAGHDAD once left 18 letters unchanged, so CENTURY read GDNTURY.
+    test('no challenge leaves more than two letters encrypting to themselves', async ({ page }) => {
+        const n = await page.locator('#picker button').count();
+        for (let i = 0; i < n; i++) {
+            await page.locator('#picker button').nth(i).click();
+            const c = (await page.locator('#b_in').inputValue()).toUpperCase().replace(/[^A-Z]/g, '');
+            const p = (await page.locator('#b_solution').textContent()).toUpperCase().replace(/[^A-Z]/g, '');
+            expect(c.length).toBe(p.length);
+            const same = new Set([...p].filter((ch, k) => c[k] === ch));
+            expect(same.size, `challenge ${i}: ${[...same].join('')}`).toBeLessThanOrEqual(2);
+        }
+    });
+
     test('selecting a challenge swaps ciphertext and reveals its solution', async ({ page }) => {
         const before = await page.locator('#b_in').inputValue();
         await page.locator('#picker .pgroup').nth(0).locator('button').first().click();
