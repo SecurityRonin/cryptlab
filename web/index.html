@@ -540,6 +540,7 @@
           <button class="act" id="b_reset">Reset</button>
         </div>
         <div class="meter" id="b_acc"></div>
+        <div class="meter" id="b_unlock1"></div>
       </div>
 
       <div class="tool" id="tool2" hidden>
@@ -554,6 +555,7 @@
           <button class="act" id="b_undo">Undo pass</button>
         </div>
         <div class="meter" id="b_bg"></div>
+        <div class="meter" id="b_unlock2"></div>
         <div class="stepbox" id="b_stepbox" hidden>
           <p style="margin:0">The search is a loop of tiny experiments: <b>exchange two letters, re-score, keep the exchange only if the score went up.</b> Each press below runs one experiment on the real board.</p>
           <div class="tlabel" style="margin-top:10px">The score <span>— how English do the pairs look?</span></div>
@@ -2237,18 +2239,21 @@ function makeBigrams(texts){
   cryptlab.showTool=showTool;
   const unlock=n=>cryptlab.unlockTab(n===2?2:3);
   /* The main button unlocks the next tab at once; working the board earns it too:
-     any eight clicks in ② open ④, any eight in ④ open ⑤. Counted on the panel, so
-     the clicked control's own handler has run before the notice is written. */
+     any eight interactions in ② open ④, any eight in ④ open ⑤. One per pointer press
+     (a click, a tap, or the start of a drag — touch drags fire no click) and one per
+     key. The notice gets its own line because a drop repaints the tool's meter. */
   const acts={1:0,2:0};
   function act(){
     if(!(stage in acts)||++acts[stage]<8)return;
     const next=stage+1, b=document.querySelector('#seg button[data-t="'+next+'"]');
     if(!b||!b.classList.contains('lock'))return;
     unlock(next);
-    (stage===1?acc:bgMeter).insertAdjacentHTML('beforeend',
-      '<br><b>Tab '+(next===2?'④ Bigrams':'⑤ Cribs')+' is now unlocked</b> — eight clicks earned it.');
+    document.getElementById('b_unlock'+stage).innerHTML=
+      '<b>Tab '+(next===2?'④ Bigrams':'⑤ Cribs')+' is now unlocked</b> — eight moves earned it.';
   }
-  document.getElementById('brk').addEventListener('click',act);
+  const brkEl=document.getElementById('brk');
+  brkEl.addEventListener('pointerdown',act);
+  brkEl.addEventListener('keydown',e=>{if(!e.repeat)act();});   // a held key is one interaction
 
   function touched(){
     stepEnd();

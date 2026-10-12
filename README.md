@@ -25,7 +25,7 @@ CryptLab is a teaching tool built as a **timeline**. The tabs run left to right 
 | ⑦ RSA | Diffie–Hellman → Rivest, Shamir, Adleman | 1976 / 1977 | Factoring, if you can do it |
 | ⑧ Shor | Peter Shor | 1994 | RSA outright — on a machine nobody has built yet |
 
-Tabs ②, ④ and ⑤ work on **the same ciphertext and the same board**, so a student breaks one message with a thousand years of escalating technique and watches the score climb. Later tabs stay locked until the earlier one has been tried: pressing its main button unlocks the next tab at once, and so do any eight clicks spent working the board.
+Tabs ②, ④ and ⑤ work on **the same ciphertext and the same board**, so a student breaks one message with a thousand years of escalating technique and watches the score climb. Later tabs stay locked until the earlier one has been tried: pressing its main button unlocks the next tab at once, and so do any eight interactions spent working the board — clicks, taps, drags or key presses.
 
 The arc has a turn in it. Attacks escalate for five tabs, then the **one-time pad wins outright** — provably, and permanently. It loses anyway, on operational grounds rather than mathematical ones, which is why the story continues into public-key cryptography and then into the one attack on this page that has not arrived yet.
 
@@ -109,7 +109,7 @@ Nothing here simulates a quantum computer. Faking that would fabricate the one t
 ## Tech Stack
 
 - **Frontend:** `web/index.html` — vanilla HTML/CSS/JS, no build step, no frameworks — plus `web/cribwords.js`, the crib dictionary, regenerated from SCOWL by `tools/build-cribwords.mjs`
-- **Testing:** [Playwright](https://playwright.dev/) — 117 end-to-end tests covering the step-by-step pair search, the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
+- **Testing:** [Playwright](https://playwright.dev/) — 119 end-to-end tests covering the step-by-step pair search, the pointer-drag mechanics, the Caesar and Vigenère solvers, the tool ladder and its locking, the crib tool, the one-time pad's key-for-any-plaintext property, RSA end to end, Shor's period arithmetic, and a 390×844 touch viewport. `tests/measure.spec.js` is a measurement harness rather than an assertion suite: it prints the table above so the teaching copy quotes observed numbers.
   ```bash
   npx playwright test                                                  # local
   BASE_URL=https://securityronin-cryptlab.netlify.app npx playwright test   # against production

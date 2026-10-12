@@ -53,3 +53,16 @@ test.describe('Earning the next tab by working the board', () => {
         await expect(page.locator('#b_unlock2')).toContainText('now unlocked');
     });
 });
+
+test.describe('Earning the next tab on a phone', () => {
+    test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    test('eight touchscreen taps in ② unlock ④', async ({ page }) => {
+        await page.goto('/');
+        await page.click('#seg button[data-t="1"]');
+        for (let i = 0; i < 7; i++) await poolTile(page, 'E').tap();
+        await expect(tab(page, 2)).toHaveClass(/lock/);
+        await poolTile(page, 'E').tap();
+        await expect(tab(page, 2)).not.toHaveClass(/lock/);
+    });
+});
+
